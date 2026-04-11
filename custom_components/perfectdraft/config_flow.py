@@ -95,10 +95,11 @@ class RecaptchaCallbackView(HomeAssistantView):
                 {"error": "missing flow_id or token"}, status=400
             )
 
+        # Stash the token where the flow can find it, then signal "done"
+        hass.data.setdefault(f"{DOMAIN}_recaptcha_tokens", {})[flow_id] = token
+
         try:
-            await hass.config_entries.flow.async_configure(
-                flow_id, {"recaptcha_token": token}
-            )
+            await hass.config_entries.flow.async_configure(flow_id)
         except Exception:
             _LOGGER.exception("Failed to resume config flow %s", flow_id)
             return aiohttp.web.json_response(
@@ -146,10 +147,6 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Step 2: external step — open browser for reCAPTCHA."""
         _register_views(self.hass)
 
-        if user_input is not None and "recaptcha_token" in user_input:
-            self._recaptcha_token = user_input["recaptcha_token"]
-            return await self._async_do_auth()
-
         callback_url = f"{RECAPTCHA_CALLBACK_PATH}"
         page_url = (
             f"{RECAPTCHA_PAGE_PATH}"
@@ -158,10 +155,22 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_external_step(step_id="recaptcha", url=page_url)
 
-    async def _async_do_auth(
-        self,
+    async def async_step_recaptcha_done(
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
-        """Authenticate with the API and create the config entry."""
+        """Called automatically when the external reCAPTCHA step completes."""
+        tokens = self.hass.data.get(f"{DOMAIN}_recaptcha_tokens", {})
+        self._recaptcha_token = tokens.pop(self.flow_id, None)
+
+        if not self._recaptcha_token:
+            return self.async_abort(reason="recaptcha_failed")
+
+        return self.async_external_step_done(next_step_id="finish")
+
+    async def async_step_finish(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Step 3: authenticate with the API and create the config entry."""
         session = async_get_clientsession(self.hass)
         client = PerfectDraftApiClient(session)
 
