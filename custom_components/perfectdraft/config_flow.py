@@ -30,6 +30,7 @@ from .exceptions import (
     PerfectDraftConnectionError,
 )
 from .api import PerfectDraftApiClient
+from .recaptcha import async_generate_recaptcha_token
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -128,6 +129,17 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
+
+            # Try server-side reCAPTCHA token generation first
+            session = async_get_clientsession(self.hass)
+            token = await async_generate_recaptcha_token(session)
+            if token:
+                _LOGGER.debug("Server-side reCAPTCHA token obtained")
+                self._recaptcha_token = token
+                return await self.async_step_finish()
+
+            # Fall back to browser-based external step
+            _LOGGER.debug("Server-side reCAPTCHA failed, falling back to browser")
             return await self.async_step_recaptcha()
 
         return self.async_show_form(
@@ -144,7 +156,7 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_recaptcha(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
-        """Step 2: external step — open browser for reCAPTCHA."""
+        """Step 2 (fallback): external step — open browser for reCAPTCHA."""
         _register_views(self.hass)
 
         callback_url = f"{RECAPTCHA_CALLBACK_PATH}"
@@ -178,11 +190,14 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await client.authenticate(
                 self._email, self._password, self._recaptcha_token
             )
-        except AuthenticationError:
+        except AuthenticationError as err:
+            _LOGGER.error("Authentication failed: %s", err)
             return self.async_abort(reason="invalid_auth")
-        except PerfectDraftConnectionError:
+        except PerfectDraftConnectionError as err:
+            _LOGGER.error("Connection failed: %s", err)
             return self.async_abort(reason="cannot_connect")
-        except PerfectDraftApiError:
+        except PerfectDraftApiError as err:
+            _LOGGER.error("API error during auth: %s", err)
             return self.async_abort(reason="unknown")
 
         try:
