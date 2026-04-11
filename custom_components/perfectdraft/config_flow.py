@@ -22,6 +22,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
+    RECAPTCHA_ACTION,
     RECAPTCHA_SITE_KEY,
 )
 from .exceptions import (
@@ -30,7 +31,6 @@ from .exceptions import (
     PerfectDraftConnectionError,
 )
 from .api import PerfectDraftApiClient
-from .recaptcha import async_generate_recaptcha_token
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +45,9 @@ def _get_recaptcha_html() -> str:
     global _recaptcha_html_cache
     if _recaptcha_html_cache is None:
         raw = RECAPTCHA_HTML_PATH.read_text()
-        _recaptcha_html_cache = raw.replace("RECAPTCHA_SITE_KEY", RECAPTCHA_SITE_KEY)
+        raw = raw.replace("RECAPTCHA_SITE_KEY", RECAPTCHA_SITE_KEY)
+        raw = raw.replace("RECAPTCHA_ACTION", RECAPTCHA_ACTION)
+        _recaptcha_html_cache = raw
     return _recaptcha_html_cache
 
 
@@ -129,17 +131,6 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
-
-            # Try server-side reCAPTCHA token generation first
-            session = async_get_clientsession(self.hass)
-            token = await async_generate_recaptcha_token(session)
-            if token:
-                _LOGGER.debug("Server-side reCAPTCHA token obtained")
-                self._recaptcha_token = token
-                return await self.async_step_finish()
-
-            # Fall back to browser-based external step
-            _LOGGER.debug("Server-side reCAPTCHA failed, falling back to browser")
             return await self.async_step_recaptcha()
 
         return self.async_show_form(

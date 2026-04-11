@@ -2,7 +2,8 @@ DOMAIN = "perfectdraft"
 
 API_BASE_URL = "https://api.perfectdraft.com"
 API_KEY = "cAyzERqthCJXYVExjNAhr9CzE8ncLN2cQK3WGK10"
-RECAPTCHA_SITE_KEY = "6LdrqmApAAAAAB_kTEHVnx9pua3TMurf4i75a-aQ"
+RECAPTCHA_SITE_KEY = "6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV"
+RECAPTCHA_ACTION = "Magento/login"
 
 DEFAULT_SCAN_INTERVAL = 900  # 15 minutes
 MIN_SCAN_INTERVAL = 60  # 1 minute

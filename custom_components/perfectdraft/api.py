@@ -6,7 +6,7 @@ from typing import Any
 
 import aiohttp
 
-from .const import API_BASE_URL, API_KEY
+from .const import API_BASE_URL, API_KEY, RECAPTCHA_ACTION
 from .exceptions import (
     AuthenticationError,
     PerfectDraftApiError,
@@ -15,7 +15,6 @@ from .exceptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
-RECAPTCHA_ACTION = "Android_recaptchaThatWorks/login"
 
 
 class PerfectDraftApiClient:

@@ -43,7 +43,7 @@
     </p>
   </div>
 
-  <script src="https://www.google.com/recaptcha/api.js?render=RECAPTCHA_SITE_KEY"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=RECAPTCHA_SITE_KEY"></script>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);
@@ -58,9 +58,9 @@
         return;
       }
 
-      grecaptcha.ready(function () {
-        grecaptcha
-          .execute("RECAPTCHA_SITE_KEY", { action: "login" })
+      grecaptcha.enterprise.ready(function () {
+        grecaptcha.enterprise
+          .execute("RECAPTCHA_SITE_KEY", { action: "RECAPTCHA_ACTION" })
           .then(function (token) {
             return fetch(callbackUrl, {
               method: "POST",
