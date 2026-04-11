@@ -1,0 +1,6 @@
+.git/credentials
+.worktree/
+.agent-lock
+__pycache__/
+*.pyc
+.venv/
