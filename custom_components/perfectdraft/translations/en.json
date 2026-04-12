@@ -9,9 +9,12 @@
           "password": "Password"
         }
       },
-      "recaptcha": {
-        "title": "Complete Verification",
-        "description": "A browser window will open to complete a quick verification. This only needs to happen once."
+      "token": {
+        "title": "Verification Token",
+        "description": "Open https://www.perfectdraft.com/en-gb/customer/account/login in your browser, press F12 to open the console, paste this command and press Enter:\n\ngrecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => console.log(t))\n\nCopy the token that appears and paste it below. The token expires in 2 minutes.",
+        "data": {
+          "recaptcha_token": "Verification Token"
+        }
       },
       "reauth_confirm": {
         "title": "Re-authenticate PerfectDraft",
@@ -23,17 +26,13 @@
       }
     },
     "error": {
-      "invalid_auth": "Invalid email or password, or verification failed.",
+      "invalid_auth": "Authentication failed. The token may have expired (2 min limit) or credentials are wrong. Please try again with a fresh token.",
       "cannot_connect": "Cannot connect to PerfectDraft service.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {
       "already_configured": "This PerfectDraft account is already configured.",
-      "reauth_successful": "Re-authentication successful.",
-      "invalid_auth": "Authentication failed. Please check your credentials.",
-      "cannot_connect": "Cannot connect to PerfectDraft service.",
-      "recaptcha_failed": "Verification failed. Please try again.",
-      "unknown": "An unexpected error occurred."
+      "reauth_successful": "Re-authentication successful."
     }
   },
   "options": {

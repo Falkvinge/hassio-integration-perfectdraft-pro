@@ -2,15 +2,12 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 
-import aiohttp
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.components.http import HomeAssistantView
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import PerfectDraftApiClient
@@ -23,8 +20,6 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
-    RECAPTCHA_ACTION,
-    RECAPTCHA_SITE_KEY,
 )
 from .exceptions import (
     AuthenticationError,
@@ -34,81 +29,7 @@ from .exceptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
-RECAPTCHA_HTML_PATH = Path(__file__).parent / "static" / "recaptcha.html"
-RECAPTCHA_CALLBACK_PATH = "/api/perfectdraft/recaptcha_callback"
-RECAPTCHA_PAGE_PATH = "/api/perfectdraft/recaptcha"
-
-_recaptcha_html_cache: str | None = None
-
-
-def _get_recaptcha_html() -> str:
-    global _recaptcha_html_cache
-    if _recaptcha_html_cache is None:
-        raw = RECAPTCHA_HTML_PATH.read_text()
-        raw = raw.replace("RECAPTCHA_SITE_KEY", RECAPTCHA_SITE_KEY)
-        raw = raw.replace("RECAPTCHA_ACTION", RECAPTCHA_ACTION)
-        _recaptcha_html_cache = raw
-    return _recaptcha_html_cache
-
-
-def _register_views(hass: HomeAssistant) -> None:
-    """Register the reCAPTCHA views once."""
-    key = f"{DOMAIN}_views_registered"
-    if hass.data.get(key):
-        return
-    hass.http.register_view(RecaptchaPageView())
-    hass.http.register_view(RecaptchaCallbackView())
-    hass.data[key] = True
-
-
-class RecaptchaPageView(HomeAssistantView):
-    """Serve the reCAPTCHA HTML page."""
-
-    url = RECAPTCHA_PAGE_PATH
-    name = "api:perfectdraft:recaptcha"
-    requires_auth = False
-
-    async def get(self, request):
-        return aiohttp.web.Response(
-            text=_get_recaptcha_html(),
-            content_type="text/html",
-        )
-
-
-class RecaptchaCallbackView(HomeAssistantView):
-    """Receive the reCAPTCHA token from the browser and resume the config flow."""
-
-    url = RECAPTCHA_CALLBACK_PATH
-    name = "api:perfectdraft:recaptcha_callback"
-    requires_auth = False
-
-    async def post(self, request):
-        hass = request.app["hass"]
-        try:
-            data = await request.json()
-        except Exception:
-            return aiohttp.web.json_response(
-                {"error": "invalid body"}, status=400
-            )
-
-        flow_id = data.get("flow_id")
-        token = data.get("token")
-        if not flow_id or not token:
-            return aiohttp.web.json_response(
-                {"error": "missing flow_id or token"}, status=400
-            )
-
-        hass.data.setdefault(f"{DOMAIN}_recaptcha_tokens", {})[flow_id] = token
-
-        try:
-            await hass.config_entries.flow.async_configure(flow_id)
-        except Exception:
-            _LOGGER.exception("Failed to resume config flow %s", flow_id)
-            return aiohttp.web.json_response(
-                {"error": "flow error"}, status=500
-            )
-
-        return aiohttp.web.json_response({"ok": True})
+CONF_RECAPTCHA_TOKEN = "recaptcha_token"
 
 
 class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -119,7 +40,6 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._email: str | None = None
         self._password: str | None = None
-        self._recaptcha_token: str | None = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -130,7 +50,7 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
-            return await self.async_step_recaptcha()
+            return await self.async_step_token()
 
         return self.async_show_form(
             step_id="user",
@@ -143,73 +63,61 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_recaptcha(
+    async def async_step_token(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
-        """Step 2: external step — open browser for reCAPTCHA on perfectdraft.com."""
-        _register_views(self.hass)
+        """Step 2: collect reCAPTCHA token from user."""
+        errors: dict[str, str] = {}
 
-        page_url = (
-            f"{RECAPTCHA_PAGE_PATH}"
-            f"?callback={RECAPTCHA_CALLBACK_PATH}&flow_id={self.flow_id}"
-        )
+        if user_input is not None:
+            recaptcha_token = user_input[CONF_RECAPTCHA_TOKEN].strip()
 
-        return self.async_external_step(step_id="recaptcha", url=page_url)
+            session = async_get_clientsession(self.hass)
+            client = PerfectDraftApiClient(session)
 
-    async def async_step_recaptcha_done(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.ConfigFlowResult:
-        """Called when the external reCAPTCHA step completes."""
-        tokens = self.hass.data.get(f"{DOMAIN}_recaptcha_tokens", {})
-        self._recaptcha_token = tokens.pop(self.flow_id, None)
+            try:
+                await client.authenticate(
+                    self._email, self._password, recaptcha_token
+                )
+            except AuthenticationError as err:
+                _LOGGER.error("Authentication failed: %s", err)
+                errors["base"] = "invalid_auth"
+            except PerfectDraftConnectionError as err:
+                _LOGGER.error("Connection failed: %s", err)
+                errors["base"] = "cannot_connect"
+            except PerfectDraftApiError as err:
+                _LOGGER.error("API error during auth: %s", err)
+                errors["base"] = "unknown"
+            else:
+                try:
+                    profile = await client.get_user_profile()
+                except (PerfectDraftApiError, PerfectDraftConnectionError):
+                    errors["base"] = "cannot_connect"
+                else:
+                    machine_id = _extract_machine_id(profile)
 
-        if not self._recaptcha_token:
-            return self.async_abort(reason="recaptcha_failed")
+                    await self.async_set_unique_id(self._email.lower())
+                    self._abort_if_unique_id_configured()
 
-        return self.async_external_step_done(next_step_id="finish")
+                    return self.async_create_entry(
+                        title=f"PerfectDraft ({self._email})",
+                        data={
+                            CONF_EMAIL: self._email,
+                            CONF_ACCESS_TOKEN: client.access_token,
+                            CONF_ID_TOKEN: client.id_token,
+                            CONF_REFRESH_TOKEN: client.refresh_token,
+                            CONF_MACHINE_ID: machine_id,
+                        },
+                    )
 
-    async def async_step_finish(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.ConfigFlowResult:
-        """Step 3: authenticate and create the config entry."""
-        recaptcha_token = self._recaptcha_token
-
-        session = async_get_clientsession(self.hass)
-        client = PerfectDraftApiClient(session)
-
-        try:
-            await client.authenticate(
-                self._email, self._password, recaptcha_token
-            )
-        except AuthenticationError as err:
-            _LOGGER.error("Authentication failed: %s", err)
-            return self.async_abort(reason="invalid_auth")
-        except PerfectDraftConnectionError as err:
-            _LOGGER.error("Connection failed: %s", err)
-            return self.async_abort(reason="cannot_connect")
-        except PerfectDraftApiError as err:
-            _LOGGER.error("API error during auth: %s", err)
-            return self.async_abort(reason="unknown")
-
-        try:
-            profile = await client.get_user_profile()
-        except (PerfectDraftApiError, PerfectDraftConnectionError):
-            return self.async_abort(reason="cannot_connect")
-
-        machine_id = _extract_machine_id(profile)
-
-        await self.async_set_unique_id(self._email.lower())
-        self._abort_if_unique_id_configured()
-
-        return self.async_create_entry(
-            title=f"PerfectDraft ({self._email})",
-            data={
-                CONF_EMAIL: self._email,
-                CONF_ACCESS_TOKEN: client.access_token,
-                CONF_ID_TOKEN: client.id_token,
-                CONF_REFRESH_TOKEN: client.refresh_token,
-                CONF_MACHINE_ID: machine_id,
-            },
+        return self.async_show_form(
+            step_id="token",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_RECAPTCHA_TOKEN): str,
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_reauth(
@@ -228,7 +136,7 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
-            return await self.async_step_recaptcha()
+            return await self.async_step_token()
 
         return self.async_show_form(
             step_id="reauth_confirm",
