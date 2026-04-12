@@ -7,3 +7,4 @@ __pycache__/
 .credentials.json
 *.swp
 custom_components/perfectdraft.zip
+apk_decompiled/
