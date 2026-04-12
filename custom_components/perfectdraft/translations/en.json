@@ -11,7 +11,7 @@
       },
       "token": {
         "title": "Verification Token",
-        "description": "Open https://www.perfectdraft.com/en-gb/customer/account/login in your browser, press F12 to open the console, paste this command and press Enter:\n\ngrecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => console.log(t))\n\nCopy the token that appears and paste it below. The token expires in 2 minutes.",
+        "description": "Open perfectdraft.com/en-gb/customer/account/login, press F12, paste this in the Console and press Enter: grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => console.log(t)) — Copy the output and paste it below. Token expires in 2 minutes.",
         "data": {
           "recaptcha_token": "Verification Token"
         }
@@ -26,7 +26,7 @@
       }
     },
     "error": {
-      "invalid_auth": "Authentication failed. The token may have expired (2 min limit) or credentials are wrong. Please try again with a fresh token.",
+      "invalid_auth": "Authentication failed. Token may have expired (2 min limit) or credentials are wrong. Try again with a fresh token.",
       "cannot_connect": "Cannot connect to PerfectDraft service.",
       "unknown": "An unexpected error occurred."
     },
