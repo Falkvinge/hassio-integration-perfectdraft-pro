@@ -11,7 +11,7 @@
       },
       "token": {
         "title": "Verification Token",
-        "description": "Open perfectdraft.com/en-gb/customer/account/login, press F12, paste this in the Console and press Enter: grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => console.log(t)) — Copy the output and paste it below. Token expires in 2 minutes.",
+        "description": "1) Open perfectdraft.com/en-gb/customer/account/login in your browser. 2) Press F12 and go to Console. 3) Paste the command from the integration documentation and press Enter. 4) Copy the token output and paste it below. Token expires in 2 minutes.",
         "data": {
           "recaptcha_token": "Verification Token"
         }
