@@ -35,6 +35,18 @@
       "reauth_successful": "Re-authentication successful."
     }
   },
+  "entity": {
+    "sensor": {
+      "temperature": { "name": "Temperature" },
+      "keg_remaining": { "name": "Keg Remaining" },
+      "connection": { "name": "Connection" },
+      "door": { "name": "Door" },
+      "pours": { "name": "Pours" },
+      "last_pour": { "name": "Last Pour" },
+      "firmware": { "name": "Firmware" },
+      "mode": { "name": "Mode" }
+    }
+  },
   "options": {
     "step": {
       "init": {
