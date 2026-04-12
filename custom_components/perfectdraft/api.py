@@ -6,7 +6,7 @@ from typing import Any
 
 import aiohttp
 
-from .const import API_BASE_URL, API_KEY, RECAPTCHA_ACTION
+from .const import API_BASE_URL, API_KEY
 from .exceptions import (
     AuthenticationError,
     PerfectDraftApiError,
@@ -14,7 +14,6 @@ from .exceptions import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
 
 
 class PerfectDraftApiClient:
@@ -26,6 +25,7 @@ class PerfectDraftApiClient:
         self._access_token: str | None = None
         self._id_token: str | None = None
         self._refresh_token: str | None = None
+        self._user_id: str | None = None
 
     @property
     def access_token(self) -> str | None:
@@ -35,80 +35,56 @@ class PerfectDraftApiClient:
     def refresh_token(self) -> str | None:
         return self._refresh_token
 
+    @property
+    def user_id(self) -> str | None:
+        return self._user_id
+
     def set_tokens(
         self,
-        access_token: str,
+        access_token: str | None = None,
         id_token: str | None = None,
         refresh_token: str | None = None,
+        user_id: str | None = None,
     ) -> None:
         """Restore tokens from persisted config entry data."""
-        self._access_token = access_token
+        if access_token is not None:
+            self._access_token = access_token
         if id_token is not None:
             self._id_token = id_token
         if refresh_token is not None:
             self._refresh_token = refresh_token
-
-    async def authenticate(
-        self, email: str, password: str, recaptcha_token: str
-    ) -> dict[str, str]:
-        """Sign in and return the token triple.
-
-        Returns dict with keys AccessToken, IdToken, RefreshToken.
-        """
-        url = f"{self._base}/authentication/sign-in"
-        payload = {
-            "email": email,
-            "password": password,
-            "recaptchaToken": recaptcha_token,
-            "recaptchaAction": RECAPTCHA_ACTION,
-        }
-        headers = {"x-api-key": API_KEY}
-
-        try:
-            async with self._session.post(
-                url, json=payload, headers=headers
-            ) as resp:
-                if resp.status == 401 or resp.status == 403:
-                    body = await resp.text()
-                    raise AuthenticationError(
-                        f"Sign-in rejected ({resp.status}): {body}"
-                    )
-                if resp.status != 200:
-                    body = await resp.text()
-                    raise PerfectDraftApiError(resp.status, body)
-                data = await resp.json()
-        except aiohttp.ClientError as exc:
-            raise PerfectDraftConnectionError(str(exc)) from exc
-
-        self._access_token = data["AccessToken"]
-        self._id_token = data["IdToken"]
-        self._refresh_token = data["RefreshToken"]
-
-        _LOGGER.debug("Authenticated successfully")
-        return data
+        if user_id is not None:
+            self._user_id = user_id
 
     async def refresh_access_token(
-        self, refresh_token: str | None = None
-    ) -> dict[str, str]:
-        """Use the refresh token to obtain a new access token.
+        self,
+        user_id: str | None = None,
+        refresh_token: str | None = None,
+    ) -> dict[str, Any]:
+        """Refresh tokens via /auth/renewaccesstokens.
 
-        The exact endpoint is not yet confirmed; we try the most likely
-        candidates based on the API's Cognito-style token pattern.
+        This endpoint does NOT require reCAPTCHA.
         """
+        uid = user_id or self._user_id
         token = refresh_token or self._refresh_token
-        if not token:
-            raise AuthenticationError("No refresh token available")
+        if not uid or not token:
+            raise AuthenticationError(
+                "UserId and RefreshToken are both required for token refresh"
+            )
 
-        url = f"{self._base}/authentication/refresh"
-        payload = {"refreshToken": token}
-        headers = {"x-api-key": API_KEY}
+        url = f"{self._base}/auth/renewaccesstokens"
+        payload = {"UserId": uid, "RefreshToken": token}
+        headers = {"x-api-key": API_KEY, "Content-Type": "application/json"}
 
         try:
             async with self._session.post(
                 url, json=payload, headers=headers
             ) as resp:
-                if resp.status in (401, 403):
-                    raise AuthenticationError("Refresh token expired or invalid")
+                if resp.status in (400, 401, 403):
+                    body = await resp.text()
+                    raise AuthenticationError(
+                        f"Token refresh failed ({resp.status}): {body}"
+                    )
                 if resp.status != 200:
                     body = await resp.text()
                     raise PerfectDraftApiError(resp.status, body)
@@ -120,6 +96,7 @@ class PerfectDraftApiClient:
         self._id_token = data.get("IdToken", self._id_token)
         if "RefreshToken" in data:
             self._refresh_token = data["RefreshToken"]
+        self._user_id = uid
 
         _LOGGER.debug("Token refreshed successfully")
         return data
@@ -130,7 +107,9 @@ class PerfectDraftApiClient:
         """Make an authenticated API request with automatic 401 retry."""
         url = f"{self._base}{path}"
         headers = kwargs.pop("headers", {})
-        headers["x-access-token"] = self._access_token or ""
+        headers["x-api-key"] = API_KEY
+        if self._access_token:
+            headers["x-access-token"] = self._access_token
 
         try:
             async with self._session.request(

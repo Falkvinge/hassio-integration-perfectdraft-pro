@@ -12,6 +12,7 @@ from .const import (
     CONF_ACCESS_TOKEN,
     CONF_ID_TOKEN,
     CONF_REFRESH_TOKEN,
+    CONF_USER_ID,
     DOMAIN,
     PLATFORMS,
 )
@@ -26,9 +27,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     client = PerfectDraftApiClient(session)
 
     client.set_tokens(
-        access_token=entry.data[CONF_ACCESS_TOKEN],
+        access_token=entry.data.get(CONF_ACCESS_TOKEN),
         id_token=entry.data.get(CONF_ID_TOKEN),
         refresh_token=entry.data.get(CONF_REFRESH_TOKEN),
+        user_id=entry.data.get(CONF_USER_ID),
     )
 
     coordinator = PerfectDraftDataUpdateCoordinator(hass, client, entry)

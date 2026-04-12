@@ -3,29 +3,31 @@
     "step": {
       "user": {
         "title": "PerfectDraft Account",
-        "description": "Enter your PerfectDraft app credentials.",
+        "description": "Enter the email address associated with your PerfectDraft account.",
         "data": {
-          "email": "Email",
-          "password": "Password"
+          "email": "Email"
         }
       },
-      "recaptcha": {
-        "title": "Complete Verification",
-        "description": "A browser window will open to complete a quick verification. This only needs to happen once."
+      "tokens": {
+        "title": "API Tokens",
+        "description": "Enter your UserId and RefreshToken from the PerfectDraft app. See the integration documentation for instructions on how to extract these.",
+        "data": {
+          "user_id": "User ID",
+          "refresh_token": "Refresh Token"
+        }
       },
       "reauth_confirm": {
         "title": "Re-authenticate PerfectDraft",
-        "description": "Your session has expired. Please re-enter your credentials.",
+        "description": "Your session has expired. Please enter fresh tokens from the PerfectDraft app.",
         "data": {
-          "email": "Email",
-          "password": "Password"
+          "user_id": "User ID",
+          "refresh_token": "Refresh Token"
         }
       }
     },
     "error": {
-      "invalid_auth": "Invalid email or password.",
+      "invalid_auth": "Invalid or expired tokens. Please extract fresh tokens from the PerfectDraft app.",
       "cannot_connect": "Cannot connect to PerfectDraft service.",
-      "recaptcha_failed": "Verification failed. Please try again.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {
