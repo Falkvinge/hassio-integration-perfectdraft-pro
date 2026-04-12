@@ -1,12 +1,13 @@
 """Async API client for the PerfectDraft cloud service."""
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
 import aiohttp
 
-from .const import API_BASE_URL, API_KEY
+from .const import API_BASE_URL, API_KEY, COGNITO_CLIENT_ID, COGNITO_REGION
 from .exceptions import (
     AuthenticationError,
     PerfectDraftApiError,
@@ -15,9 +16,12 @@ from .exceptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
+RECAPTCHA_ACTION_SIGN_IN = "Magento/login"
+COGNITO_IDP_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/"
+
 
 class PerfectDraftApiClient:
-    """Async client for api.perfectdraft.com."""
+    """Async client for api.perfectdraft.com with Cognito token refresh."""
 
     def __init__(self, session: aiohttp.ClientSession) -> None:
         self._session = session
@@ -25,7 +29,6 @@ class PerfectDraftApiClient:
         self._access_token: str | None = None
         self._id_token: str | None = None
         self._refresh_token: str | None = None
-        self._user_id: str | None = None
 
     @property
     def access_token(self) -> str | None:
@@ -36,15 +39,14 @@ class PerfectDraftApiClient:
         return self._refresh_token
 
     @property
-    def user_id(self) -> str | None:
-        return self._user_id
+    def id_token(self) -> str | None:
+        return self._id_token
 
     def set_tokens(
         self,
         access_token: str | None = None,
         id_token: str | None = None,
         refresh_token: str | None = None,
-        user_id: str | None = None,
     ) -> None:
         """Restore tokens from persisted config entry data."""
         if access_token is not None:
@@ -53,28 +55,23 @@ class PerfectDraftApiClient:
             self._id_token = id_token
         if refresh_token is not None:
             self._refresh_token = refresh_token
-        if user_id is not None:
-            self._user_id = user_id
 
-    async def refresh_access_token(
-        self,
-        user_id: str | None = None,
-        refresh_token: str | None = None,
-    ) -> dict[str, Any]:
-        """Refresh tokens via /auth/renewaccesstokens.
+    async def authenticate(
+        self, email: str, password: str, recaptcha_token: str
+    ) -> dict[str, str]:
+        """Sign in via /authentication/sign-in with a reCAPTCHA token.
 
-        This endpoint does NOT require reCAPTCHA.
+        The token must be generated from a real browser on perfectdraft.com
+        using the web reCAPTCHA Enterprise key with action Magento/login.
         """
-        uid = user_id or self._user_id
-        token = refresh_token or self._refresh_token
-        if not uid or not token:
-            raise AuthenticationError(
-                "UserId and RefreshToken are both required for token refresh"
-            )
-
-        url = f"{self._base}/auth/renewaccesstokens"
-        payload = {"UserId": uid, "RefreshToken": token}
-        headers = {"x-api-key": API_KEY, "Content-Type": "application/json"}
+        url = f"{self._base}/authentication/sign-in"
+        payload = {
+            "email": email,
+            "password": password,
+            "recaptchaToken": recaptcha_token,
+            "recaptchaAction": RECAPTCHA_ACTION_SIGN_IN,
+        }
+        headers = {"x-api-key": API_KEY}
 
         try:
             async with self._session.post(
@@ -83,7 +80,7 @@ class PerfectDraftApiClient:
                 if resp.status in (400, 401, 403):
                     body = await resp.text()
                     raise AuthenticationError(
-                        f"Token refresh failed ({resp.status}): {body}"
+                        f"Sign-in rejected ({resp.status}): {body}"
                     )
                 if resp.status != 200:
                     body = await resp.text()
@@ -92,14 +89,53 @@ class PerfectDraftApiClient:
         except aiohttp.ClientError as exc:
             raise PerfectDraftConnectionError(str(exc)) from exc
 
-        self._access_token = data.get("AccessToken", self._access_token)
-        self._id_token = data.get("IdToken", self._id_token)
-        if "RefreshToken" in data:
-            self._refresh_token = data["RefreshToken"]
-        self._user_id = uid
+        self._access_token = data["AccessToken"]
+        self._id_token = data["IdToken"]
+        self._refresh_token = data["RefreshToken"]
 
-        _LOGGER.debug("Token refreshed successfully")
+        _LOGGER.debug("Authenticated successfully")
         return data
+
+    async def refresh_access_token(self) -> dict[str, Any]:
+        """Refresh tokens directly via AWS Cognito (bypasses API gateway + reCAPTCHA)."""
+        if not self._refresh_token:
+            raise AuthenticationError("No refresh token available")
+
+        headers = {
+            "Content-Type": "application/x-amz-json-1.1",
+            "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+        }
+        payload = {
+            "AuthFlow": "REFRESH_TOKEN_AUTH",
+            "ClientId": COGNITO_CLIENT_ID,
+            "AuthParameters": {
+                "REFRESH_TOKEN": self._refresh_token,
+            },
+        }
+
+        try:
+            async with self._session.post(
+                COGNITO_IDP_URL, json=payload, headers=headers
+            ) as resp:
+                if resp.status in (400, 401, 403):
+                    body = await resp.text()
+                    raise AuthenticationError(
+                        f"Cognito refresh failed ({resp.status}): {body}"
+                    )
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise PerfectDraftApiError(resp.status, body)
+                data = await resp.json()
+        except aiohttp.ClientError as exc:
+            raise PerfectDraftConnectionError(str(exc)) from exc
+
+        result = data.get("AuthenticationResult", {})
+        self._access_token = result.get("AccessToken", self._access_token)
+        self._id_token = result.get("IdToken", self._id_token)
+        # Cognito refresh doesn't return a new RefreshToken — the original stays valid
+
+        _LOGGER.debug("Token refreshed via Cognito (expires in %ss)", result.get("ExpiresIn"))
+        return result
 
     async def _request(
         self, method: str, path: str, **kwargs: Any
@@ -116,7 +152,7 @@ class PerfectDraftApiClient:
                 method, url, headers=headers, **kwargs
             ) as resp:
                 if resp.status == 401:
-                    _LOGGER.debug("Got 401, attempting token refresh")
+                    _LOGGER.debug("Got 401, attempting Cognito token refresh")
                     await self.refresh_access_token()
                     headers["x-access-token"] = self._access_token or ""
                     async with self._session.request(

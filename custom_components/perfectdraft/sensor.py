@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
+from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -20,79 +20,68 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import PerfectDraftDataUpdateCoordinator
 
+KEG_TOTAL_VOLUME = 6.0  # litres
+
 
 @dataclass(frozen=True, kw_only=True)
 class PerfectDraftSensorDescription(SensorEntityDescription):
     """Extended description with a value extractor."""
 
-    value_fn: Any = None  # Callable[[dict], Any]
+    value_fn: Callable[[dict], Any] = lambda d: None
+
+
+def _get_details(data: dict) -> dict:
+    return data.get("details") or {}
 
 
 def _get_temperature(data: dict) -> float | None:
-    for key in ("temperature", "temp", "currentTemperature"):
-        val = data.get(key)
-        if val is not None:
-            try:
-                return float(val)
-            except (TypeError, ValueError):
-                pass
-    return None
+    val = _get_details(data).get("displayedBeerTemperatureInCelsius")
+    if val is not None and val != 0:
+        return float(val)
+    val = _get_details(data).get("temperature")
+    return float(val) if val is not None else None
 
 
-def _get_percent_remaining(data: dict) -> float | None:
-    for key in (
-        "beerRemainingPercent",
-        "beerRemaining",
-        "remaining",
-        "volumePercent",
-        "volume_percent",
-        "percentRemaining",
-    ):
-        val = data.get(key)
-        if val is not None:
-            try:
-                return float(val)
-            except (TypeError, ValueError):
-                pass
-    # Fallback: if there's a raw volume out of 6000ml, convert to percent
-    for vol_key in ("volume", "beerVolume", "volumeRemaining"):
-        vol = data.get(vol_key)
-        if vol is not None:
-            try:
-                return round(float(vol) / 6000.0 * 100, 1)
-            except (TypeError, ValueError, ZeroDivisionError):
-                pass
-    return None
+def _get_volume_remaining(data: dict) -> float | None:
+    vol = _get_details(data).get("kegVolume")
+    if vol is None:
+        return None
+    return round(float(vol) / KEG_TOTAL_VOLUME * 100, 1)
 
 
-def _get_days_to_expiry(data: dict) -> int | None:
-    for key in (
-        "daysToExpiry",
-        "days_to_expiry",
-        "freshnessDays",
-        "expiryDays",
-        "daysRemaining",
-        "freshness",
-    ):
-        val = data.get(key)
-        if val is not None:
-            try:
-                return int(val)
-            except (TypeError, ValueError):
-                pass
-    return None
+def _get_connection_state(data: dict) -> str | None:
+    state = _get_details(data).get("connectedState")
+    if state is None:
+        return None
+    return "Connected" if state else "Disconnected"
 
 
-def _get_keg_name(data: dict) -> str | None:
-    for key in ("kegName", "keg_name", "beerName", "beer_name", "name", "keg"):
-        val = data.get(key)
-        if isinstance(val, str) and val:
-            return val
-        if isinstance(val, dict):
-            inner = val.get("name") or val.get("brand") or val.get("title")
-            if inner:
-                return str(inner)
-    return None
+def _get_door_state(data: dict) -> str | None:
+    closed = _get_details(data).get("doorClosed")
+    if closed is None:
+        return None
+    return "Closed" if closed else "Open"
+
+
+def _get_pours(data: dict) -> int | None:
+    val = _get_details(data).get("numberOfPoursSinceStartup")
+    return int(val) if val is not None else None
+
+
+def _get_last_pour_volume(data: dict) -> float | None:
+    val = _get_details(data).get("volumeOfLastPour")
+    if val is None or val == 0:
+        return None
+    return round(float(val) * 1000)  # litres → ml
+
+
+def _get_firmware(data: dict) -> str | None:
+    return _get_details(data).get("firmwareVersion")
+
+
+def _get_mode(data: dict) -> str | None:
+    setting = data.get("setting") or {}
+    return setting.get("mode")
 
 
 SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
@@ -102,29 +91,56 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=0,
         value_fn=_get_temperature,
     ),
     PerfectDraftSensorDescription(
-        key="percent_remaining",
-        translation_key="percent_remaining",
+        key="keg_remaining",
+        translation_key="keg_remaining",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:keg",
-        value_fn=_get_percent_remaining,
+        suggested_display_precision=0,
+        value_fn=_get_volume_remaining,
     ),
     PerfectDraftSensorDescription(
-        key="days_to_expiry",
-        translation_key="days_to_expiry",
-        native_unit_of_measurement=UnitOfTime.DAYS,
-        icon="mdi:calendar-clock",
-        value_fn=_get_days_to_expiry,
+        key="connection",
+        translation_key="connection",
+        icon="mdi:wifi",
+        value_fn=_get_connection_state,
     ),
     PerfectDraftSensorDescription(
-        key="keg_name",
-        translation_key="keg_name",
+        key="door",
+        translation_key="door",
+        icon="mdi:door",
+        value_fn=_get_door_state,
+    ),
+    PerfectDraftSensorDescription(
+        key="pours",
+        translation_key="pours",
         icon="mdi:beer",
-        value_fn=_get_keg_name,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=_get_pours,
+    ),
+    PerfectDraftSensorDescription(
+        key="last_pour",
+        translation_key="last_pour",
+        native_unit_of_measurement="mL",
+        icon="mdi:glass-mug-variant",
+        value_fn=_get_last_pour_volume,
+    ),
+    PerfectDraftSensorDescription(
+        key="firmware",
+        translation_key="firmware",
+        icon="mdi:chip",
+        entity_registry_enabled_default=False,
+        value_fn=_get_firmware,
+    ),
+    PerfectDraftSensorDescription(
+        key="mode",
+        translation_key="mode",
+        icon="mdi:thermostat",
+        value_fn=_get_mode,
     ),
 )
 
@@ -169,21 +185,18 @@ class PerfectDraftSensor(
             return None
         return self.entity_description.value_fn(data)
 
-    @property
-    def available(self) -> bool:
-        if not super().available:
-            return False
-        return self.native_value is not None
-
 
 def _device_info(
     coordinator: PerfectDraftDataUpdateCoordinator,
 ) -> DeviceInfo:
     data = coordinator.data or {}
     machine_id = data.get("_machine_id", "unknown")
+    details = data.get("details") or {}
     return DeviceInfo(
-        identifiers={(DOMAIN, machine_id)},
+        identifiers={(DOMAIN, str(machine_id))},
         name="PerfectDraft Pro",
         manufacturer="PerfectDraft",
         model="Pro",
+        sw_version=details.get("firmwareVersion"),
+        serial_number=details.get("serialNumber"),
     )

@@ -8,3 +8,7 @@ __pycache__/
 *.swp
 custom_components/perfectdraft.zip
 apk_decompiled/
+.credentials*
+
+*.apk
+k8s-token-extractor.yaml

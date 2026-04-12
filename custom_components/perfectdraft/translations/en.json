@@ -3,36 +3,37 @@
     "step": {
       "user": {
         "title": "PerfectDraft Account",
-        "description": "Enter the email address associated with your PerfectDraft account.",
+        "description": "Enter your PerfectDraft app credentials.",
         "data": {
-          "email": "Email"
+          "email": "Email",
+          "password": "Password"
         }
       },
-      "tokens": {
-        "title": "API Tokens",
-        "description": "Enter your UserId and RefreshToken from the PerfectDraft app. See the integration documentation for instructions on how to extract these.",
-        "data": {
-          "user_id": "User ID",
-          "refresh_token": "Refresh Token"
-        }
+      "recaptcha": {
+        "title": "Complete Verification",
+        "description": "A browser window will open to complete a quick verification. This only needs to happen once."
       },
       "reauth_confirm": {
         "title": "Re-authenticate PerfectDraft",
-        "description": "Your session has expired. Please enter fresh tokens from the PerfectDraft app.",
+        "description": "Your session has expired. Please re-enter your credentials.",
         "data": {
-          "user_id": "User ID",
-          "refresh_token": "Refresh Token"
+          "email": "Email",
+          "password": "Password"
         }
       }
     },
     "error": {
-      "invalid_auth": "Invalid or expired tokens. Please extract fresh tokens from the PerfectDraft app.",
+      "invalid_auth": "Invalid email or password, or verification failed.",
       "cannot_connect": "Cannot connect to PerfectDraft service.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {
       "already_configured": "This PerfectDraft account is already configured.",
-      "reauth_successful": "Re-authentication successful."
+      "reauth_successful": "Re-authentication successful.",
+      "invalid_auth": "Authentication failed. Please check your credentials.",
+      "cannot_connect": "Cannot connect to PerfectDraft service.",
+      "recaptcha_failed": "Verification failed. Please try again.",
+      "unknown": "An unexpected error occurred."
     }
   },
   "options": {

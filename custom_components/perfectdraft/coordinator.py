@@ -66,11 +66,12 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             if not machine_id:
                 profile = await self.client.get_user_profile()
-                machine_id = _extract_first_machine_id(profile)
-                if not machine_id:
+                machines = profile.get("perfectdraftMachines", [])
+                if not machines:
                     raise UpdateFailed(
                         "No PerfectDraft machine found on this account"
                     )
+                machine_id = str(machines[0].get("id", ""))
 
             details = await self.client.get_machine_details(machine_id)
         except AuthenticationError as err:
@@ -82,22 +83,3 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         details["_machine_id"] = machine_id
         return details
-
-
-def _extract_first_machine_id(profile: dict[str, Any]) -> str | None:
-    """Best-effort extraction of the first machine ID from /api/me."""
-    if "machine_id" in profile:
-        return profile["machine_id"]
-
-    for key in ("machines", "perfectdraft_machines", "machineIds"):
-        machines = profile.get(key)
-        if isinstance(machines, list) and machines:
-            item = machines[0]
-            if isinstance(item, dict):
-                return (
-                    item.get("id")
-                    or item.get("machine_id")
-                    or item.get("machineId")
-                )
-            return str(item)
-    return None
