@@ -30,5 +30,5 @@
 ## 6. Build and test
 
 - [x] 6.1 Syntax-check all modified files
-- [ ] 6.2 Build zip, deploy to HA, verify: integration survives past 1 hour, icon shows, sensors named correctly, keg freshness sensor appears (manual — user)
+- [x] 6.2 Build zip, deploy to HA, verify: integration survives past 1 hour, icon shows, sensors named correctly, keg freshness sensor appears (manual — user)
 - [x] 6.3 Commit and push as v0.2.0
