@@ -12,3 +12,4 @@ apk_decompiled/
 
 *.apk
 k8s-token-extractor.yaml
+.github-token
