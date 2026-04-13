@@ -53,7 +53,7 @@ grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {actio
 5. Select it, copy it, and paste it into the Home Assistant setup dialog
 6. Click **Submit** within 2 minutes (the token expires)
 
-That's it! The integration will authenticate and start polling your PerfectDraft Pro. You won't need to do this again unless your session expires (typically after 30 days).
+That's it! The integration will authenticate and start polling your PerfectDraft Pro. Token refresh is automatic — you should not need to repeat this step. If the session does eventually expire, Home Assistant will prompt you to re-authenticate. (This is a new integration, so the exact session lifespan is still being determined — it's at least 30 days and may well be indefinite.)
 
 ### Step 3: Configure polling
 
