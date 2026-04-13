@@ -225,21 +225,21 @@ class PerfectDraftKegFreshnessSensor(
         """Restore keg insertion date from previous session."""
         await super().async_added_to_hass()
 
-        last_state = await self.async_get_last_extra_data()
-        if last_state and (stored := last_state.as_dict()):
-            iso = stored.get("keg_inserted_at")
+        last_state = await self.async_get_last_state()
+        if last_state and last_state.attributes:
+            iso = last_state.attributes.get("keg_inserted_at")
             if iso:
                 try:
                     self._keg_inserted_at = datetime.fromisoformat(iso)
                 except (ValueError, TypeError):
                     pass
-            pours = stored.get("last_pours")
+            pours = last_state.attributes.get("last_pours")
             if pours is not None:
                 self._last_pours = int(pours)
 
     @property
-    def extra_restore_state_data(self) -> dict[str, Any] | None:
-        """Persist keg insertion date across restarts."""
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose keg insertion date as an attribute (also used for restore)."""
         return {
             "keg_inserted_at": self._keg_inserted_at.isoformat() if self._keg_inserted_at else None,
             "last_pours": self._last_pours,
