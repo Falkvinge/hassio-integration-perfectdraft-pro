@@ -44,14 +44,15 @@ When archiving a change (`openspec-archive`), always perform the complete close-
 1. **Commit** any uncommitted implementation work in the agent worktree.
 2. **Merge** the agent branch into the integration branch from the main checkout.
 3. **Push** the integration branch to origin.
-4. **Archive** the change artifacts (`mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>`).
-5. **Remove the worktree and branch:**
+4. **Sync delta specs** to main specs (`openspec/specs/`) before archiving. If the change introduced or modified capabilities, ensure the main specs reflect the final implemented state — not the original proposal, but what was actually built.
+5. **Archive** the change artifacts (`mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>`).
+6. **Remove the worktree and branch:**
    ```bash
    git worktree remove .worktree/<topic> --force
    git branch -d agent/<topic>
    ```
 
-"Done" means done — no orphan worktrees, no unmerged branches, no unpushed commits.
+"Done" means done — no orphan worktrees, no unmerged branches, no unpushed commits, no stale specs.
 
 ## Tech Stack
 
