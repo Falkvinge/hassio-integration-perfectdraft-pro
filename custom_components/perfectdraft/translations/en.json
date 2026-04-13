@@ -11,7 +11,7 @@
       },
       "token": {
         "title": "Verification Token",
-        "description": "Paste a verification token from PerfectDraft's website. See the README for the 30-second instructions. The token expires in 2 minutes, so generate it right before pasting.",
+        "description": "Paste a verification token from PerfectDraft's website. See the [setup instructions](https://github.com/Falkvinge/hassio-integration-perfectdraft-pro#step-2-verification-token) for the 30-second walkthrough. The token expires in 2 minutes, so generate it right before pasting.",
         "data": {
           "recaptcha_token": "Verification Token"
         }
