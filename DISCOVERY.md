@@ -308,3 +308,19 @@ With valid tokens, the complete API surface was mapped:
 | `POST /auth/signin` | Yes (.NET backend) | Always returns "Captcha Failure" without valid token |
 | `POST /auth/renewaccesstokens` | No | Needs `{UserId, RefreshToken}`, returned 409 Conflict in testing |
 | Cognito `InitiateAuth` | **No** | Direct Cognito call, works perfectly for refresh |
+
+---
+
+## Why This Succeeded Where Others Failed
+
+Every previous attempt to build a PerfectDraft Home Assistant integration hit the reCAPTCHA wall and stopped. The forum thread has been open since December 2022. People got IP-banned, gave up on token generation, built broken integrations that asked users to paste ephemeral hex codes. The integration was widely considered impossible without PerfectDraft's cooperation.
+
+The breakthrough came from connecting three observations that nobody had put together before:
+
+1. **PerfectDraft's web store uses a different reCAPTCHA key than the mobile app** — and the API accepts tokens from both. Everyone focused on the Android key from the app traffic (`6LdrqmAp...`), which is an Android-only Enterprise key that cannot generate valid tokens from any browser. But the Magento web store at `perfectdraft.com` loads a *web* Enterprise key (`6LcZQiUo...`) that works from any browser on that domain. The API's Cognito Lambda trigger is configured to accept tokens from either key.
+
+2. **The Cognito User Pool can be called directly for token refresh, bypassing the API gateway entirely.** The reCAPTCHA check lives in a Lambda trigger on the API gateway's `/authentication/sign-in` endpoint. But the underlying Cognito User Pool (`eu-west-1_UXWVyvlHR`) accepts standard `REFRESH_TOKEN_AUTH` calls with no reCAPTCHA, no API key, no rate limiting. The pool ID and client ID were extracted from the JWT claims in the access token. This means reCAPTCHA is only needed once — at initial sign-in — and never again.
+
+3. **A real human browser on `perfectdraft.com` gets a high enough reCAPTCHA score.** Automated browsers (Playwright, headless Chrome, even headed Chrome with stealth patches) consistently received scores below PerfectDraft's threshold. But the reCAPTCHA check is score-based, not binary — a real user's browser session on the legitimate domain passes easily. The one-time setup cost of running a console command on `perfectdraft.com` is an acceptable UX trade-off for an integration that then runs autonomously forever.
+
+Each of these observations was individually discoverable. The first required checking the web store's login page source. The second required decoding a JWT. The third required testing the web key against the API and understanding why the score mattered. But nobody had connected all three into a working auth flow — until now.
