@@ -41,7 +41,7 @@ Go to **Settings > Devices & Services > Add Integration > PerfectDraft** and ent
 
 The integration needs a one-time verification token from PerfectDraft's website. This step looks more technical than it actually is — it takes about 30 seconds:
 
-1. Open [perfectdraft.com/en-gb/customer/account/login](https://www.perfectdraft.com/en-gb/customer/account/login) in your browser (Chrome, Firefox, Edge, etc.)
+1. Open [perfectdraft.com/en-gb/customer/account/login](https://www.perfectdraft.com/en-gb/customer/account/login) in your browser (Chrome, Firefox, Edge, etc.) — you do **not** need to log in on this page, just open it
 2. Press **F12** to open Developer Tools, then click the **Console** tab
 3. Paste this command and press **Enter**:
 
