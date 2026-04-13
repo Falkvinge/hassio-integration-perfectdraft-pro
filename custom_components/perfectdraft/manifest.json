@@ -1,7 +1,7 @@
 {
   "domain": "perfectdraft",
   "name": "PerfectDraft",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "documentation": "https://github.com/Falkvinge/hassio-integration-perfectdraft-pro",
   "issue_tracker": "https://github.com/Falkvinge/hassio-integration-perfectdraft-pro/issues",
   "codeowners": ["@Falkvinge"],

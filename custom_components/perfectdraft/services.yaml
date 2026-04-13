@@ -1,0 +1,14 @@
+set_poll_interval_seconds:
+  name: Set polling interval
+  description: Change how often the integration polls the PerfectDraft API. Useful for increasing frequency during events.
+  fields:
+    interval:
+      name: Interval
+      description: Polling interval in seconds (minimum 60).
+      required: true
+      example: 60
+      selector:
+        number:
+          min: 60
+          max: 86400
+          unit_of_measurement: seconds
