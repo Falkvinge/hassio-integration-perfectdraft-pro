@@ -125,7 +125,7 @@ class PerfectDraftApiClient:
                 if resp.status != 200:
                     body = await resp.text()
                     raise PerfectDraftApiError(resp.status, body)
-                data = await resp.json()
+                data = await resp.json(content_type=None)
         except aiohttp.ClientError as exc:
             raise PerfectDraftConnectionError(str(exc)) from exc
 

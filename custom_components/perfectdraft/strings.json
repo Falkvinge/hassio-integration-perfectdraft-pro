@@ -11,7 +11,7 @@
       },
       "token": {
         "title": "Verification Token",
-        "description": "1) Open perfectdraft.com/en-gb/customer/account/login in your browser. 2) Press F12 and go to Console. 3) Paste the command from the integration documentation and press Enter. 4) Copy the token output and paste it below. Token expires in 2 minutes.",
+        "description": "Paste a verification token from PerfectDraft's website. See the README for the 30-second instructions. The token expires in 2 minutes, so generate it right before pasting.",
         "data": {
           "recaptcha_token": "Verification Token"
         }
@@ -44,7 +44,8 @@
       "pours": { "name": "Pours" },
       "last_pour": { "name": "Last Pour" },
       "firmware": { "name": "Firmware" },
-      "mode": { "name": "Mode" }
+      "mode": { "name": "Mode" },
+      "keg_freshness": { "name": "Keg Freshness" }
     }
   },
   "options": {
