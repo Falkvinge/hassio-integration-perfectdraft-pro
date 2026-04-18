@@ -59,6 +59,14 @@ That's it! The integration will authenticate and start polling your PerfectDraft
 
 After setup, you can adjust the polling interval in the integration's options. Default is 15 minutes; minimum is 1 minute.
 
+## Companion Card
+
+The [PerfectDraft Card](https://github.com/Falkvinge/hassio-component-perfectdraft-pro) is a custom Lovelace card that visualises your keg data as a beer emoji pictogram — see at a glance what's on tap, how cold it is, and how many glasses remain. Designed for wall-mounted panels (Sonoff NSPanel Pro), works on any HA dashboard.
+
+![PerfectDraft Card showing Leffe Blonde at 3°C with 18 glasses remaining](docs/card-screenshot.png)
+
+Install via HACS (Dashboard category) or see the [card repository](https://github.com/Falkvinge/hassio-component-perfectdraft-pro) for details.
+
 ## How It Works
 
 The integration communicates with PerfectDraft's cloud API to read your machine's telemetry data. Token refresh is handled automatically via AWS Cognito — no reCAPTCHA needed after the initial setup.
