@@ -18,6 +18,20 @@ _LOGGER = logging.getLogger(__name__)
 
 RECAPTCHA_ACTION_SIGN_IN = "Magento/login"
 COGNITO_IDP_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/"
+SETTING_WRITE_FIELDS = (
+    "temperature",
+    "temperatureMin",
+    "temperatureMax",
+    "temperatureUnit",
+    "pressure",
+    "boost",
+    "volumeThreshold",
+    "ecoModeEnabled",
+    "ecoModeBeerTemperatureSetPoint",
+    "ecoModeSchedulerEnabled",
+    "ecoModeAbortedByAppliance",
+    "mode",
+)
 
 
 class PerfectDraftApiClient:
@@ -186,4 +200,41 @@ class PerfectDraftApiClient:
         """GET /api/perfectdraft_machines/{machine_id} — full machine status."""
         return await self._request(
             "GET", f"/api/perfectdraft_machines/{machine_id}"
+        )
+
+    async def get_machine_active_keg(self, machine_id: str) -> dict[str, Any]:
+        """GET active keg metadata for a machine.
+
+        The default machine response omits kegActive. The documented
+        perfectdraft_keg_active_read group adds the current keg resource and
+        insertion timestamp without requiring product catalogue enumeration.
+        """
+        return await self._request(
+            "GET",
+            f"/api/perfectdraft_machines/{machine_id}",
+            params={"groups[]": "perfectdraft_keg_active_read"},
+        )
+
+    async def update_machine_setting(
+        self,
+        setting_id: str,
+        current_setting: dict[str, Any],
+        updates: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Replace the machine setting while preserving existing fields.
+
+        The API documents PUT rather than PATCH for settings. Keep the current
+        setting values in the payload so changing one safe control does not
+        accidentally clear unrelated settings, including pressure.
+        """
+        payload = {
+            key: current_setting[key]
+            for key in SETTING_WRITE_FIELDS
+            if key in current_setting
+        }
+        payload.update(updates)
+        return await self._request(
+            "PUT",
+            f"/api/perfectdraft_machine_settings/{setting_id}",
+            json=payload,
         )

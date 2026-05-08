@@ -11,7 +11,7 @@
       },
       "token": {
         "title": "Verification Token",
-        "description": "Paste a verification token from PerfectDraft's website. See the [setup instructions](https://github.com/Falkvinge/hassio-integration-perfectdraft-pro#step-2-verification-token) for the 30-second walkthrough. The token expires in 2 minutes, so generate it right before pasting.",
+        "description": "Paste a verification token from PerfectDraft's website. See the [setup instructions](https://github.com/Hyperion5088/hassio-integration-perfectdraft-pro#step-2-verification-token) for the 30-second walkthrough. The token expires in 2 minutes, so generate it right before pasting.",
         "data": {
           "recaptcha_token": "Verification Token"
         }
@@ -45,7 +45,37 @@
       "last_pour": { "name": "Last Pour" },
       "firmware": { "name": "Firmware" },
       "mode": { "name": "Mode" },
+      "active_keg_product_id": { "name": "Active Keg Product ID" },
+      "active_keg_inserted_at": { "name": "Active Keg Inserted" },
+      "keg_age": { "name": "Keg Age" },
+      "beer_name": { "name": "Beer" },
+      "favorite_beers": { "name": "Favorite Beers" },
+      "keg_volume": { "name": "Keg Volume" },
+      "keg_type": { "name": "Keg Type" },
+      "keg_pressure": { "name": "Keg Pressure" },
+      "target_temperature": { "name": "Target Temperature" },
+      "pressure_setpoint": { "name": "Pressure Setpoint" },
+      "boost": { "name": "Boost" },
+      "eco_temperature": { "name": "Eco Temperature" },
+      "volume_threshold": { "name": "Volume Threshold" },
+      "time_to_target_temperature": { "name": "Time to Target Temperature" },
+      "last_pour_duration": { "name": "Last Pour Duration" },
       "keg_freshness": { "name": "Keg Freshness" }
+    },
+    "number": {
+      "target_temperature_control": { "name": "Target Temperature" },
+      "eco_temperature_control": { "name": "Eco Temperature" }
+    },
+    "select": {
+      "mode_control": { "name": "Mode" },
+      "volume_threshold_control": { "name": "Volume Threshold" }
+    },
+    "switch": {
+      "boost_control": { "name": "Boost" },
+      "eco_mode_control": { "name": "Eco Mode" }
+    },
+    "button": {
+      "order_again": { "name": "Order Again" }
     }
   },
   "options": {

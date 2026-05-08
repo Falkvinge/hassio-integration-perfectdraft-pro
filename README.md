@@ -9,12 +9,44 @@ A Home Assistant custom integration for the [PerfectDraft Pro](https://www.perfe
 | Temperature | Current beer temperature | °C |
 | Keg Remaining | Beer left in the keg | % |
 | Keg Freshness | Days remaining until 30-day freshness expires | days |
+| Active Keg Inserted | Server-reported keg insertion timestamp | timestamp |
+| Keg Age | Days since the active keg was inserted | days |
+| Beer | Active beer name from the local catalogue lookup, with website beer details exposed as attributes | — |
+| Favorite Beers | Diagnostic count of favourite beers from the PerfectDraft account, disabled by default | — |
+| Favorite Beer 1-10 | Diagnostic favourite beer slots with catalogue attributes, disabled by default | — |
+| Keg Volume | Remaining keg volume from the machine | L |
+| Keg Pressure | Current keg pressure from the machine | mbar |
+| Target Temperature | Configured beer target temperature | °C |
 | Connection | Machine connectivity status | — |
 | Door | Door open/closed state | — |
 | Pours | Number of pours since keg was loaded | — |
 | Last Pour | Volume of the most recent pour | mL |
+| Last Pour Duration | Duration of the most recent pour, disabled by default | ms |
+| Time to Target Temperature | Estimated cooling/heating time, disabled by default | s |
 | Mode | Current operating mode (standard, eco, etc.) | — |
 | Firmware | Machine firmware version (disabled by default) | — |
+| Active Keg Product ID | PerfectDraft API product ID until catalogue lookup is implemented | — |
+| Keg Type | API keg type, disabled by default | — |
+| Pressure Setpoint | Configured pressure setpoint, disabled by default | mbar |
+| Boost | Boost setting, disabled by default | — |
+| Eco Temperature | Eco mode target temperature, disabled by default | °C |
+| Volume Threshold | Configured low-volume threshold, disabled by default | L |
+
+## Controls
+
+The integration exposes controls for documented machine settings that are also visible as current setting values:
+
+| Control | Description |
+|---------|-------------|
+| Target Temperature | Number entity constrained to the machine-reported temperature range |
+| Eco Temperature | Number entity constrained to the machine-reported temperature range |
+| Mode | Select entity using the documented mode options |
+| Volume Threshold | Select entity using the documented threshold values |
+| Boost | Switch entity |
+| Eco Mode | Switch entity backed by the documented `mode` value (`eco`/`standard`) |
+| Order Again | Button entity that creates a clickable Home Assistant notification for the active beer's PerfectDraft product page |
+
+Pressure settings are intentionally not exposed as controls.
 
 ## Installation
 
@@ -70,5 +102,9 @@ Install via HACS (Dashboard category) or see the [card repository](https://githu
 ## How It Works
 
 The integration communicates with PerfectDraft's cloud API to read your machine's telemetry data. Token refresh is handled automatically via AWS Cognito — no reCAPTCHA needed after the initial setup.
+
+This fork also reads the documented `perfectdraft_keg_active_read` API group. That exposes the active keg resource ID and server-side insertion timestamp, which is more reliable than inferring keg freshness from pour count and volume alone.
+
+Beer metadata is resolved from a local catalogue lookup generated from the public PerfectDraft website's product index and product-page metadata. The official `/api/products/{id}` endpoint currently returns only the API product ID, so the local catalogue is the bridge between the machine's active keg ID and human-readable beer details. The active Beer sensor and favourite beer diagnostic sensors expose the website catalogue fields as entity attributes.
 
 For the full technical story of how this integration was reverse-engineered, see [DISCOVERY.md](DISCOVERY.md).

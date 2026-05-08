@@ -19,4 +19,8 @@ CONF_USER_ID = "user_id"
 CONF_MACHINE_ID = "machine_id"
 CONF_SCAN_INTERVAL = "scan_interval"
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "number", "select", "switch", "button"]
+
+MODE_OPTIONS = ["standard", "boost", "cooling", "standby", "eco"]
+VOLUME_THRESHOLD_OPTIONS = [0.75, 1.5, 3.0, 4.5]
+MAX_FAVORITE_BEER_SENSORS = 10

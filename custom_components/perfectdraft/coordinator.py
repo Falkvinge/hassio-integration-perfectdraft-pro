@@ -64,8 +64,8 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         machine_id = self.config_entry.data.get(CONF_MACHINE_ID)
 
         try:
+            profile = await self.client.get_user_profile()
             if not machine_id:
-                profile = await self.client.get_user_profile()
                 machines = profile.get("perfectdraftMachines", [])
                 if not machines:
                     raise UpdateFailed(
@@ -74,6 +74,11 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 machine_id = str(machines[0].get("id", ""))
 
             details = await self.client.get_machine_details(machine_id)
+            try:
+                active_keg = await self.client.get_machine_active_keg(machine_id)
+            except (PerfectDraftApiError, PerfectDraftConnectionError) as err:
+                _LOGGER.debug("Active keg metadata unavailable: %s", err)
+                active_keg = {}
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed(
                 "Authentication failed — please re-authenticate"
@@ -82,4 +87,6 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
 
         details["_machine_id"] = machine_id
+        details["_active_keg"] = active_keg.get("kegActive") or {}
+        details["_profile"] = profile
         return details

@@ -2,9 +2,10 @@
 """Local test harness for the PerfectDraft API integration.
 
 Exercises the token-refresh + data flow without Home Assistant:
-  1. Refresh tokens via /auth/renewaccesstokens
+  1. Refresh tokens via Cognito
   2. Fetch user profile (/api/me)
   3. Fetch machine details
+  4. Fetch active keg metadata
 
 Reads credentials from .credentials.json (gitignored).
 
@@ -64,12 +65,8 @@ def load_credentials() -> dict:
         log.error("Missing %s — create it with user_id and refresh_token", CRED_FILE)
         sys.exit(1)
     creds = json.loads(CRED_FILE.read_text())
-    if not creds.get("user_id") or not creds.get("refresh_token"):
-        log.error(
-            "Fill in user_id and refresh_token in %s\n"
-            "Format: {\"user_id\": \"...\", \"refresh_token\": \"...\", \"email\": \"...\"}",
-            CRED_FILE,
-        )
+    if not creds.get("refresh_token"):
+        log.error("Fill in refresh_token in %s", CRED_FILE)
         sys.exit(1)
     return creds
 
@@ -90,27 +87,21 @@ def dump_json(label: str, data, *, dump: bool):
 
 async def run(step: str, dump: bool):
     creds = load_credentials()
-    user_id = creds["user_id"]
     refresh_token = creds["refresh_token"]
 
     print(f"\n--- PerfectDraft API Test Harness ---")
-    print(f"  User ID:  {user_id[:20]}..." if len(user_id) > 20 else f"  User ID:  {user_id}")
     print(f"  API base: {API_BASE_URL}")
     print()
 
     async with aiohttp.ClientSession() as session:
         client = PerfectDraftApiClient(session)
+        client.set_tokens(refresh_token=refresh_token)
 
         # --- Step 1: Refresh tokens ---
-        print("[1/4] Refreshing tokens via /auth/renewaccesstokens...")
+        print("[1/4] Refreshing tokens via Cognito...")
         try:
-            refresh_data = await client.refresh_access_token(
-                user_id=user_id,
-                refresh_token=refresh_token,
-            )
+            refresh_data = await client.refresh_access_token()
             print(f"  OK — got fresh tokens")
-            print(f"  AccessToken:  {client.access_token[:30]}..." if client.access_token else "  AccessToken: None")
-            print(f"  RefreshToken: {client.refresh_token[:30]}..." if client.refresh_token else "  RefreshToken: None")
             dump_json("Refresh response", refresh_data, dump=dump)
         except (AuthenticationError, PerfectDraftApiError, PerfectDraftConnectionError) as exc:
             print(f"  FAILED — {type(exc).__name__}: {exc}")
@@ -152,11 +143,11 @@ async def run(step: str, dump: bool):
             return
 
         # --- Step 4: Try keg endpoint ---
-        print(f"\n[4/4] Fetching machine kegs...")
+        print(f"\n[4/4] Fetching active keg metadata...")
         try:
-            kegs = await client._request("GET", "/api/perfectdraft_machine_kegs")
+            kegs = await client.get_machine_active_keg(machine_id)
             print(f"  OK — response received")
-            dump_json("Machine kegs", kegs, dump=True)
+            dump_json("Active keg", kegs, dump=True)
         except (PerfectDraftApiError, PerfectDraftConnectionError, AuthenticationError) as exc:
             print(f"  FAILED — {type(exc).__name__}: {exc}")
 
