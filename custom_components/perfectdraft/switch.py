@@ -25,11 +25,6 @@ class PerfectDraftSwitchDescription(SwitchEntityDescription):
     turn_off_update: dict[str, Any]
 
 
-def _bool_setting(data: dict[str, Any], key: str) -> bool | None:
-    val = (data.get("setting") or {}).get(key)
-    return bool(val) if val is not None else None
-
-
 def _mode_is_eco(data: dict[str, Any]) -> bool | None:
     mode = (data.get("setting") or {}).get("mode")
     return mode == "eco" if mode is not None else None
@@ -40,15 +35,6 @@ def _setting_has(data: dict[str, Any], key: str) -> bool:
 
 
 SWITCH_DESCRIPTIONS: tuple[PerfectDraftSwitchDescription, ...] = (
-    PerfectDraftSwitchDescription(
-        key="boost_control",
-        translation_key="boost_control",
-        icon="mdi:rocket-launch",
-        value_fn=lambda data: _bool_setting(data, "boost"),
-        available_fn=lambda data: _setting_has(data, "boost"),
-        turn_on_update={"boost": True},
-        turn_off_update={"boost": False},
-    ),
     PerfectDraftSwitchDescription(
         key="eco_mode_control",
         translation_key="eco_mode_control",

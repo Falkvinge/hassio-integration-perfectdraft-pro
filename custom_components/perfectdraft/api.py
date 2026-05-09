@@ -1,6 +1,7 @@
 """Async API client for the PerfectDraft cloud service."""
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import json
 import logging
 from typing import Any
@@ -272,7 +273,14 @@ class PerfectDraftApiClient:
         return await self._request(
             "POST",
             "/api/customer_product_ratings",
-            json=payload,
+            json={
+                **payload,
+                "customerProductRatingNote": {
+                    "productNote": None,
+                    "favouriteTemperature": None,
+                    "ratedAt": datetime.now(UTC).isoformat(),
+                },
+            },
         )
 
 

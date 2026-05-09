@@ -131,9 +131,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_migrate_entity_categories(hass, entry)
     _async_remove_obsolete_active_beer_detail_entities(hass, entry)
     _async_remove_obsolete_button_entities(hass, entry)
+    _async_remove_obsolete_switch_entities(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _async_migrate_entity_categories(hass, entry)
     _async_remove_obsolete_button_entities(hass, entry)
+    _async_remove_obsolete_switch_entities(hass, entry)
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
@@ -230,6 +232,21 @@ def _async_remove_obsolete_button_entities(
         unique_id = str(entity.unique_id or "")
         if entity.entity_id.startswith("button.") and (
             unique_id.endswith("_order_again") or entity.entity_id.endswith("_order_again")
+        ):
+            registry.async_remove(entity.entity_id)
+
+
+def _async_remove_obsolete_switch_entities(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> None:
+    """Remove switch entities intentionally retired from the integration."""
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        unique_id = str(entity.unique_id or "")
+        if entity.entity_id.startswith("switch.") and (
+            unique_id.endswith("_boost_control")
+            or entity.entity_id.endswith("_boost_control")
         ):
             registry.async_remove(entity.entity_id)
 
