@@ -12,3 +12,115 @@ set_poll_interval_seconds:
           min: 60
           max: 86400
           unit_of_measurement: seconds
+
+set_ideal_temperature:
+  name: Set ideal beer temperature
+  description: Store a local ideal temperature override for a beer. If product ID is omitted, the active keg is used.
+  fields:
+    product_id:
+      name: Product ID
+      description: PerfectDraft product ID. Leave blank to use the active keg.
+      required: false
+      example: "43019"
+      selector:
+        text:
+    temperature:
+      name: Temperature
+      description: Ideal serving temperature in Celsius.
+      required: true
+      example: 4
+      selector:
+        number:
+          min: 0
+          max: 20
+          unit_of_measurement: °C
+
+refresh_shop_data:
+  name: Refresh shop data
+  description: Refresh cached product-page data for one beer. If product ID is omitted, the active keg is used. This is rate-limited.
+  fields:
+    product_id:
+      name: Product ID
+      description: PerfectDraft product ID. Leave blank to use the active keg.
+      required: false
+      example: "43019"
+      selector:
+        text:
+
+set_local_beer:
+  name: Set local beer catalogue entry
+  description: Create or update a local catalogue entry. If product ID is omitted, the active keg is used.
+  fields:
+    product_id:
+      name: Product ID
+      description: PerfectDraft product ID. Leave blank to use the active keg.
+      required: false
+      example: "43019"
+      selector:
+        text:
+    name:
+      name: Beer name
+      description: Display name for the beer.
+      required: true
+      example: "New Beer"
+      selector:
+        text:
+    product_name:
+      name: Product name
+      description: Full product page name.
+      required: false
+      selector:
+        text:
+    url:
+      name: Product URL
+      description: PerfectDraft product page URL.
+      required: false
+      selector:
+        text:
+    sku:
+      name: SKU
+      description: Product SKU.
+      required: false
+      selector:
+        text:
+    brewery:
+      name: Brewery
+      description: Brewery or brand.
+      required: false
+      selector:
+        text:
+    style:
+      name: Style
+      description: Beer style.
+      required: false
+      selector:
+        text:
+    country:
+      name: Country
+      description: Country of origin.
+      required: false
+      selector:
+        text:
+    abv:
+      name: ABV
+      description: Alcohol by volume.
+      required: false
+      example: "4.8%"
+      selector:
+        text:
+    size:
+      name: Size
+      description: Keg size.
+      required: false
+      example: "6L"
+      selector:
+        text:
+    temperature:
+      name: Ideal temperature
+      description: Ideal serving temperature in Celsius.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 20
+          unit_of_measurement: °C

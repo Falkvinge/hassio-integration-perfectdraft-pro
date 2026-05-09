@@ -48,7 +48,8 @@ The integration exposes controls for documented machine settings that are also v
 | Volume Threshold | Select entity using the documented threshold values |
 | Boost | Switch entity |
 | Eco Mode | Switch entity backed by the documented `mode` value (`eco`/`standard`) |
-| Order Again | Button entity that creates a clickable Home Assistant notification for the active beer's PerfectDraft product page |
+| Apply Ideal Temperature | Button that sets the machine target temperature to the current beer's ideal serving temperature |
+| Add Current Beer To Favorites | Button that adds the current keg to the PerfectDraft account favourites when it is not already a favourite |
 
 Pressure settings are intentionally not exposed as controls.
 
@@ -110,5 +111,17 @@ The integration communicates with PerfectDraft's cloud API to read your machine'
 This fork also reads the documented `perfectdraft_keg_active_read` API group. That exposes the active keg resource ID and server-side insertion timestamp, which is more reliable than inferring keg freshness from pour count and volume alone.
 
 Beer metadata is resolved from a local catalogue lookup generated from the public PerfectDraft website's product index and product-page metadata. The official `/api/products/{id}` endpoint currently returns only the API product ID, so the local catalogue is the bridge between the machine's active keg ID and human-readable beer details. The active Beer sensor and favourite beer diagnostic sensors expose the website catalogue fields as entity attributes.
+
+The Beer sensor also maintains a small local shop-data cache for the active keg and favourite kegs. Product pages are refreshed slowly: the active beer is eligible every 12 hours, favourites every 24 hours, and only one stale page is fetched per coordinator cycle with at least 60 seconds between product-page requests. Cached attributes include product image URL, food pairings, short description, price, price per pint, stock state, back-in-stock flag, review count, and shop refresh time.
+
+On startup, the integration seeds a local persisted catalogue from the shipped Python catalogue. Runtime lookups use that local catalogue, so user-local entries, manual corrections, and scraped shop data survive restarts without editing code. Runtime shop data is only fetched for the beer currently installed in the machine and beers marked as favourites in the PerfectDraft app. To track pricing or stock for another beer, add it to your favourites in the PerfectDraft app. Full catalogue discovery is handled separately by the maintainer crawler, not by every Home Assistant install.
+
+The Available Beers diagnostic sensor reads the current keg count from the curated PerfectDraft Kegs page. Its attributes are beer names, with each value set to `In Stock`, `Out of Stock`, or `Unknown`.
+
+The Catalogue Job diagnostic sensor shows progress for manual metadata/range refresh buttons. Its state is the current job status, and attributes include job type, current item, processed/total count, percent, timestamps, and last error where applicable.
+
+If a new keg appears before the shipped catalogue knows about it, use the `perfectdraft.set_local_beer` service to create a local catalogue entry for the active keg/product ID. Ideal beer temperature can come from the local catalogue, cached shop data, or a local manual override. Use the Ideal Beer Temperature number entity or the `perfectdraft.set_ideal_temperature` service to set an override for the current beer. The Apply Ideal Temperature button sets the machine target temperature to the beer's ideal temperature and is unavailable when no ideal temperature is known.
+
+Catalogue maintenance is intentionally separate from Home Assistant runtime. Developers can run `scripts/crawl_catalogue.py --discover-only` to discover product URLs from the sitemap, or run the same script without `--discover-only` to crawl pages slowly and write `catalogue-crawl.json` for review before updating the static catalogue.
 
 For the full technical story of how this integration was reverse-engineered, see [DISCOVERY.md](DISCOVERY.md).

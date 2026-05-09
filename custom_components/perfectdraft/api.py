@@ -238,3 +238,49 @@ class PerfectDraftApiClient:
             f"/api/perfectdraft_machine_settings/{setting_id}",
             json=payload,
         )
+
+    async def set_product_favourite(
+        self,
+        profile: dict[str, Any],
+        product_id: str,
+    ) -> dict[str, Any]:
+        """Mark a product as a favourite for the current customer."""
+        customer = profile.get("@id")
+        if not customer and profile.get("id") is not None:
+            customer = f"/api/customers/{profile['id']}"
+        if not customer:
+            raise PerfectDraftApiError(400, "Customer IRI is unavailable")
+
+        keg = f"/api/products/{product_id}"
+        existing = _rating_for_keg(profile, keg)
+        payload = {
+            "customer": customer,
+            "keg": keg,
+            "favourite": True,
+            "rating": existing.get("rating") if existing else None,
+            "active": True,
+        }
+
+        if existing and existing.get("id") is not None:
+            return await self._request(
+                "PUT",
+                f"/api/customer_product_ratings/{existing['id']}",
+                json=payload,
+            )
+
+        return await self._request(
+            "POST",
+            "/api/customer_product_ratings",
+            json=payload,
+        )
+
+
+def _rating_for_keg(
+    profile: dict[str, Any],
+    keg_iri: str,
+) -> dict[str, Any] | None:
+    """Return the customer product rating for a keg IRI, if present."""
+    for rating in profile.get("customerProductRatings") or []:
+        if isinstance(rating, dict) and rating.get("keg") == keg_iri:
+            return rating
+    return None

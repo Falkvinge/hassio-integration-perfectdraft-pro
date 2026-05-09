@@ -50,6 +50,8 @@
       "keg_age": { "name": "Keg Age" },
       "beer_name": { "name": "Beer" },
       "favorite_beers": { "name": "Favorite Beers" },
+      "available_beers": { "name": "Available Beers" },
+      "catalogue_job": { "name": "Catalogue Job" },
       "keg_volume": { "name": "Keg Volume" },
       "keg_type": { "name": "Keg Type" },
       "keg_pressure": { "name": "Keg Pressure" },
@@ -64,7 +66,8 @@
     },
     "number": {
       "target_temperature_control": { "name": "Target Temperature" },
-      "eco_temperature_control": { "name": "Eco Temperature" }
+      "eco_temperature_control": { "name": "Eco Temperature" },
+      "ideal_temperature_control": { "name": "Ideal Beer Temperature" }
     },
     "select": {
       "mode_control": { "name": "Mode" },
@@ -75,7 +78,10 @@
       "eco_mode_control": { "name": "Eco Mode" }
     },
     "button": {
-      "order_again": { "name": "Order Again" }
+      "apply_ideal_temperature": { "name": "Apply Ideal Temperature" },
+      "add_current_beer_favorite": { "name": "Add Current Beer To Favorites" },
+      "refresh_beer_metadata": { "name": "Refresh Beer Metadata" },
+      "update_available_beers": { "name": "Update Available Beers" }
     }
   },
   "options": {

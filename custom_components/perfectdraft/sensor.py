@@ -99,6 +99,28 @@ def _get_favorite_count(data: dict) -> int:
     return len(favorite_product_ids(data))
 
 
+def _get_available_beer_count(data: dict) -> int | None:
+    value = ((data.get("_beer_data") or {}).get("available_beers") or {}).get(
+        "available_beers"
+    )
+    return int(value) if value is not None else None
+
+
+def _friendly_stock_state(value: str | None) -> str:
+    if value == "in_stock":
+        return "In Stock"
+    if value == "out_of_stock":
+        return "Out of Stock"
+    return "Unknown"
+
+
+def _get_catalogue_job_status(data: dict) -> str:
+    return (
+        ((data.get("_beer_data") or {}).get("job_status") or {}).get("status")
+        or "idle"
+    )
+
+
 def _get_temperature(data: dict) -> float | None:
     val = _get_details(data).get("displayedBeerTemperatureInCelsius")
     if val is not None and val != 0:
@@ -294,6 +316,20 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         value_fn=_get_favorite_count,
     ),
     PerfectDraftSensorDescription(
+        key="available_beers",
+        translation_key="available_beers",
+        icon="mdi:keg",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_get_available_beer_count,
+    ),
+    PerfectDraftSensorDescription(
+        key="catalogue_job",
+        translation_key="catalogue_job",
+        icon="mdi:progress-clock",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_get_catalogue_job_status,
+    ),
+    PerfectDraftSensorDescription(
         key="keg_volume",
         translation_key="keg_volume",
         native_unit_of_measurement="L",
@@ -414,6 +450,7 @@ class PerfectDraftSensor(
         machine_id = (coordinator.data or {}).get("_machine_id", "unknown")
         self._attr_unique_id = f"{machine_id}_{description.key}"
         self._attr_device_info = device_info(coordinator)
+        self._attr_entity_category = description.entity_category
 
     @property
     def native_value(self) -> Any:
@@ -425,16 +462,44 @@ class PerfectDraftSensor(
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         if self.entity_description.key == "beer_name":
-            return catalogue_attributes(_get_keg_product_id(self.coordinator.data or {}))
+            data = self.coordinator.data or {}
+            return catalogue_attributes(_get_keg_product_id(data), data)
         if self.entity_description.key == "favorite_beers":
             favorites = favorite_product_ids(self.coordinator.data or {})
             return {
                 "favorites": [
-                    catalogue_attributes(product_id)
+                    catalogue_attributes(product_id, self.coordinator.data or {})
                     for product_id in favorites
                 ],
             }
+        if self.entity_description.key == "available_beers":
+            available = (
+                ((self.coordinator.data or {}).get("_beer_data") or {}).get(
+                    "available_beers"
+                )
+                or {}
+            )
+            return {
+                product["name"]: _friendly_stock_state(product.get("stock_state"))
+                for product in available.get("products") or []
+                if product.get("name")
+            }
+        if self.entity_description.key == "catalogue_job":
+            return (
+                ((self.coordinator.data or {}).get("_beer_data") or {}).get(
+                    "job_status"
+                )
+                or {"status": "idle"}
+            )
         return None
+
+    @property
+    def entity_picture(self) -> str | None:
+        """Use cached product artwork for the active beer sensor."""
+        if self.entity_description.key != "beer_name":
+            return None
+        data = self.coordinator.data or {}
+        return catalogue_attributes(_get_keg_product_id(data), data).get("image_url")
 
 
 class PerfectDraftFavoriteBeerSensor(
@@ -479,7 +544,7 @@ class PerfectDraftFavoriteBeerSensor(
         favorites = favorite_product_ids(self.coordinator.data or {})
         if self._index >= len(favorites):
             return {}
-        return catalogue_attributes(favorites[self._index])
+        return catalogue_attributes(favorites[self._index], self.coordinator.data or {})
 
 
 class PerfectDraftKegFreshnessSensor(

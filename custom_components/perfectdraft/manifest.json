@@ -1,7 +1,7 @@
 {
   "domain": "perfectdraft",
   "name": "PerfectDraft",
-  "version": "0.5.7",
+  "version": "0.6.0",
   "documentation": "https://github.com/Hyperion5088/hassio-integration-perfectdraft-pro",
   "issue_tracker": "https://github.com/Hyperion5088/hassio-integration-perfectdraft-pro/issues",
   "codeowners": ["@Hyperion5088"],

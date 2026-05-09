@@ -7,6 +7,7 @@ from typing import Any, Callable
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -116,6 +117,12 @@ class PerfectDraftSelect(
     @property
     def available(self) -> bool:
         return super().available and setting(self.coordinator).get("id") is not None
+
+    @property
+    def entity_category(self) -> EntityCategory | None:
+        if self.entity_description.key == "volume_threshold_control":
+            return EntityCategory.CONFIG
+        return None
 
     async def async_select_option(self, option: str) -> None:
         """Select an option through the PerfectDraft settings API."""

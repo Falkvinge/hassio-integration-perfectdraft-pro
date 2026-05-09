@@ -8,12 +8,19 @@ from homeassistant.components.number import NumberEntity, NumberEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import PerfectDraftDataUpdateCoordinator
-from .entity import device_info, setting, update_setting
+from .entity import (
+    active_product_id,
+    device_info,
+    ideal_temperature,
+    setting,
+    update_setting,
+)
 
 DEFAULT_MIN_TEMP = 3.0
 DEFAULT_MAX_TEMP = 7.0
@@ -77,8 +84,13 @@ async def async_setup_entry(
     """Set up PerfectDraft number entities."""
     coordinator: PerfectDraftDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        PerfectDraftNumber(coordinator, description)
-        for description in NUMBER_DESCRIPTIONS
+        [
+            *(
+                PerfectDraftNumber(coordinator, description)
+                for description in NUMBER_DESCRIPTIONS
+            ),
+            PerfectDraftIdealTemperatureNumber(coordinator),
+        ]
     )
 
 
@@ -88,6 +100,7 @@ class PerfectDraftNumber(
     """A PerfectDraft number control."""
 
     _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
     entity_description: PerfectDraftNumberDescription
 
     def __init__(
@@ -124,3 +137,60 @@ class PerfectDraftNumber(
             self.coordinator,
             {self.entity_description.update_key: value},
         )
+
+
+class PerfectDraftIdealTemperatureNumber(
+    CoordinatorEntity[PerfectDraftDataUpdateCoordinator], NumberEntity
+):
+    """Local ideal temperature override for the active beer."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "ideal_temperature_control"
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_native_step = 1
+    _attr_icon = "mdi:beer-outline"
+
+    def __init__(
+        self,
+        coordinator: PerfectDraftDataUpdateCoordinator,
+    ) -> None:
+        super().__init__(coordinator)
+        machine_id = (coordinator.data or {}).get("_machine_id", "unknown")
+        self._attr_unique_id = f"{machine_id}_ideal_temperature_control"
+        self._attr_device_info = device_info(coordinator)
+
+    @property
+    def native_min_value(self) -> float:
+        return _temperature_min(self.coordinator.data or {})
+
+    @property
+    def native_max_value(self) -> float:
+        return _temperature_max(self.coordinator.data or {})
+
+    @property
+    def native_value(self) -> float | None:
+        return ideal_temperature(
+            active_product_id(self.coordinator),
+            self.coordinator.data or {},
+        )
+
+    @property
+    def available(self) -> bool:
+        product_id = active_product_id(self.coordinator)
+        return (
+            super().available
+            and product_id is not None
+            and ideal_temperature(product_id, self.coordinator.data or {}) is None
+        )
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Persist a local ideal temperature override for the active beer."""
+        product_id = active_product_id(self.coordinator)
+        if product_id is None:
+            return
+        value = max(self.native_min_value, min(self.native_max_value, value))
+        await self.coordinator.beer_data.async_set_ideal_temperature(product_id, value)
+        data = dict(self.coordinator.data or {})
+        data["_beer_data"] = self.coordinator.beer_data.snapshot()
+        self.coordinator.async_set_updated_data(data)

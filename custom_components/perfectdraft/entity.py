@@ -1,6 +1,7 @@
 """Shared entity helpers for PerfectDraft."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from homeassistant.exceptions import HomeAssistantError
@@ -60,9 +61,113 @@ def catalogue_value(product_id: str | None, key: str) -> Any:
     return value
 
 
-def catalogue_attributes(product_id: str | None) -> dict[str, Any]:
+def _runtime_beer_data(data: dict[str, Any] | None) -> dict[str, Any]:
+    return (data or {}).get("_beer_data") or {}
+
+
+def local_catalogue_entry(
+    product_id: str | None,
+    data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a user-local catalogue entry for a product."""
+    if not product_id:
+        return {}
+    value = (_runtime_beer_data(data).get("local_catalogue") or {}).get(product_id)
+    return value if isinstance(value, dict) else {}
+
+
+def catalogue_entry(
+    product_id: str | None,
+    data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the runtime catalogue entry, with static fallback."""
+    if not product_id:
+        return {}
+    runtime_catalogue = _runtime_beer_data(data).get("catalogue") or {}
+    entry = dict(runtime_catalogue.get(product_id) or lookup_product(product_id))
+    if product_id not in runtime_catalogue:
+        entry.update(local_catalogue_entry(product_id, data))
+    return entry
+
+
+def runtime_catalogue_value(
+    product_id: str | None,
+    key: str,
+    data: dict[str, Any] | None = None,
+) -> Any:
+    """Return a catalogue value including user-local overrides."""
+    value = catalogue_entry(product_id, data).get(key)
+    if isinstance(value, dict):
+        return value.get("value")
+    return value
+
+
+def shop_data(
+    product_id: str | None,
+    data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return cached shop data for a product from coordinator data."""
+    if not product_id:
+        return {}
+    cache = (_runtime_beer_data(data).get("shop_cache") or {})
+    value = cache.get(product_id)
+    return value if isinstance(value, dict) else {}
+
+
+def temperature_from_text(value: Any) -> float | None:
+    """Return the first numeric temperature from catalogue text."""
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    match = re.search(r"-?\d+(?:\.\d+)?", str(value))
+    return float(match.group(0)) if match else None
+
+
+def ideal_temperature(
+    product_id: str | None,
+    data: dict[str, Any] | None = None,
+) -> float | None:
+    """Return manual override or catalogue/shop recommended temperature."""
+    if not product_id:
+        return None
+
+    overrides = _runtime_beer_data(data).get("ideal_temperature_overrides") or {}
+    if product_id in overrides:
+        return temperature_from_text(overrides[product_id])
+
+    value = runtime_catalogue_value(product_id, "serving_temperature", data)
+    if value in (None, ""):
+        value = shop_data(product_id, data).get("recommended_temperature")
+    return temperature_from_text(value)
+
+
+def ideal_temperature_source(
+    product_id: str | None,
+    data: dict[str, Any] | None = None,
+) -> str | None:
+    """Return where the ideal temperature came from."""
+    if not product_id:
+        return None
+    overrides = _runtime_beer_data(data).get("ideal_temperature_overrides") or {}
+    if product_id in overrides:
+        return "manual"
+    if runtime_catalogue_value(product_id, "serving_temperature", data) not in (
+        None,
+        "",
+    ):
+        return "catalogue"
+    if shop_data(product_id, data).get("recommended_temperature") not in (None, ""):
+        return "shop"
+    return None
+
+
+def catalogue_attributes(
+    product_id: str | None,
+    data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return useful catalogue metadata as flat HA attributes."""
-    catalogue = lookup_product(product_id)
+    catalogue = catalogue_entry(product_id, data)
     attrs: dict[str, Any] = {"product_id": product_id}
     for key in (
         "name",
@@ -79,6 +184,35 @@ def catalogue_attributes(product_id: str | None) -> dict[str, Any]:
         value = catalogue.get(key)
         if isinstance(value, dict):
             value = value.get("value")
+        if value not in (None, ""):
+            attrs[key] = value
+    temp = ideal_temperature(product_id, data)
+    if temp is not None:
+        attrs["ideal_temperature"] = temp
+        attrs["ideal_temperature_source"] = ideal_temperature_source(product_id, data)
+
+    for key in (
+        "website_product_id",
+        "gtin",
+        "sap_product_code",
+        "image_url",
+        "food_pairings",
+        "short_description",
+        "plato",
+        "recommended_temperature",
+        "price",
+        "price_currency",
+        "price_per_pint",
+        "stock_state",
+        "stock_quantity",
+        "back_in_stock",
+        "back_in_stock_since",
+        "back_in_stock_until",
+        "review_count",
+        "review_rating",
+        "shop_last_checked",
+    ):
+        value = shop_data(product_id, data).get(key)
         if value not in (None, ""):
             attrs[key] = value
     return attrs

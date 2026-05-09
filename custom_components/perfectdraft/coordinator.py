@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api import PerfectDraftApiClient
+from .beer_data import PerfectDraftBeerData
 from .const import (
     CONF_MACHINE_ID,
     CONF_SCAN_INTERVAL,
@@ -39,8 +40,10 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hass: HomeAssistant,
         client: PerfectDraftApiClient,
         config_entry: ConfigEntry,
+        beer_data: PerfectDraftBeerData,
     ) -> None:
         self.client = client
+        self.beer_data = beer_data
         interval = config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
@@ -79,6 +82,11 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except (PerfectDraftApiError, PerfectDraftConnectionError) as err:
                 _LOGGER.debug("Active keg metadata unavailable: %s", err)
                 active_keg = {}
+            current_product_id = _product_id_from_keg(active_keg.get("kegActive") or {})
+            await self.beer_data.async_update_shop_cache(
+                _favorite_product_ids(profile),
+                current_product_id,
+            )
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed(
                 "Authentication failed — please re-authenticate"
@@ -89,4 +97,30 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         details["_machine_id"] = machine_id
         details["_active_keg"] = active_keg.get("kegActive") or {}
         details["_profile"] = profile
+        details["_beer_data"] = self.beer_data.snapshot()
         return details
+
+
+def _product_id_from_keg(active_keg: dict[str, Any]) -> str | None:
+    """Extract product ID from active keg metadata."""
+    keg = active_keg.get("keg")
+    if not keg:
+        return None
+    return str(keg).rsplit("/", 1)[-1]
+
+
+def _favorite_product_ids(profile: dict[str, Any]) -> list[str]:
+    """Return favourite product IDs from profile payload."""
+    ratings = profile.get("customerProductRatings") or []
+    product_ids: list[str] = []
+    for rating in ratings:
+        if not isinstance(rating, dict):
+            continue
+        if rating.get("active") is False or rating.get("removedAt"):
+            continue
+        if rating.get("favourite") is not True:
+            continue
+        keg = rating.get("keg")
+        if keg:
+            product_ids.append(str(keg).rsplit("/", 1)[-1])
+    return product_ids

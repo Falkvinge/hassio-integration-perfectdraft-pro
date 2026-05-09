@@ -1,4 +1,5 @@
 DOMAIN = "perfectdraft"
+DATA_BEER_DATA = "beer_data"
 
 API_BASE_URL = "https://api.perfectdraft.com"
 API_KEY = "cAyzERqthCJXYVExjNAhr9CzE8ncLN2cQK3WGK10"
