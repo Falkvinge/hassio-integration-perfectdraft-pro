@@ -4,7 +4,7 @@ A Home Assistant custom integration for the [PerfectDraft Pro](https://www.perfe
 
 ## Attribution
 
-This fork is based on the original PerfectDraft Pro Home Assistant integration by [Falkvinge](https://github.com/Falkvinge/hassio-integration-perfectdraft-pro). Thanks to the original project for the HACS packaging, setup flow, companion-card ecosystem, and baseline PerfectDraft API work.
+This fork is based on the original PerfectDraft Pro Home Assistant integration by [Falkvinge](https://github.com/Falkvinge/hassio-integration-perfectdraft-pro). Thanks to the original project for the HACS packaging, setup flow, and baseline PerfectDraft API work.
 
 ## Sensors
 
@@ -46,7 +46,6 @@ The integration exposes controls for documented machine settings that are also v
 | Eco Temperature | Number entity constrained to the machine-reported temperature range |
 | Mode | Select entity using the documented mode options |
 | Volume Threshold | Select entity using the documented threshold values |
-| Boost | Switch entity |
 | Eco Mode | Switch entity backed by the documented `mode` value (`eco`/`standard`) |
 | Apply Ideal Temperature | Button that sets the machine target temperature to the current beer's ideal serving temperature |
 | Add Current Beer To Favorites | Button that adds the current keg to the PerfectDraft account favourites when it is not already a favourite |
@@ -55,6 +54,7 @@ The integration exposes controls for documented machine settings that are also v
 | Discover New Beers | Diagnostic button that refreshes the curated PerfectDraft keg range |
 
 Pressure settings are intentionally not exposed as controls.
+The machine's Boost status is exposed as a read-only sensor. A writable Boost control is not exposed because the live PerfectDraft backend rejects both known Boost write shapes for this machine/API.
 
 ## Installation
 
@@ -98,14 +98,6 @@ That's it! The integration will authenticate and start polling your PerfectDraft
 ### Step 3: Configure polling
 
 After setup, you can adjust the polling interval in the integration's options. Default is 15 minutes; minimum is 1 minute.
-
-## Companion Card
-
-The [PerfectDraft Card](https://github.com/Falkvinge/hassio-component-perfectdraft-pro) is a custom Lovelace card that visualises your keg data as a beer emoji pictogram — see at a glance what's on tap, how cold it is, and how many glasses remain. Designed for wall-mounted panels (Sonoff NSPanel Pro), works on any HA dashboard.
-
-![PerfectDraft Card showing Leffe Blonde at 3°C with 18 glasses remaining](docs/card-screenshot.png)
-
-Install via HACS (Dashboard category) or see the [card repository](https://github.com/Falkvinge/hassio-component-perfectdraft-pro) for details.
 
 ## How It Works
 
