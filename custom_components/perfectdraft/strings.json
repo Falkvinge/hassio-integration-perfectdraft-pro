@@ -81,7 +81,8 @@
       "apply_ideal_temperature": { "name": "Apply Ideal Temperature" },
       "add_current_beer_favorite": { "name": "Add Current Beer To Favorites" },
       "refresh_beer_metadata": { "name": "Refresh Beer Metadata" },
-      "update_available_beers": { "name": "Update Available Beers" }
+      "update_favorites": { "name": "Update Favorites" },
+      "update_available_beers": { "name": "Discover New Beers" }
     }
   },
   "options": {

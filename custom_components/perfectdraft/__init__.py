@@ -60,6 +60,7 @@ CONFIG_ENTITY_UNIQUE_ID_SUFFIXES = {
 }
 DIAGNOSTIC_ENTITY_UNIQUE_ID_SUFFIXES = {
     "_refresh_beer_metadata",
+    "_update_favorites",
     "_update_available_beers",
 }
 NORMAL_ENTITY_UNIQUE_ID_SUFFIXES = {

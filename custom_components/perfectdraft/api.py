@@ -257,9 +257,10 @@ class PerfectDraftApiClient:
             "customer": customer,
             "keg": keg,
             "favourite": True,
-            "rating": existing.get("rating") if existing else None,
             "active": True,
         }
+        if existing and isinstance(existing.get("rating"), int):
+            payload["rating"] = existing["rating"]
 
         if existing and existing.get("id") is not None:
             return await self._request(

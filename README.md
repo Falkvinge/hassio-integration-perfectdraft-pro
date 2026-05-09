@@ -26,7 +26,7 @@ This fork is based on the original PerfectDraft Pro Home Assistant integration b
 | Pours | Number of pours since keg was loaded | — |
 | Last Pour | Volume of the most recent pour | mL |
 | Last Pour Duration | Duration of the most recent pour, disabled by default | ms |
-| Time to Target Temperature | Estimated cooling/heating time, disabled by default | s |
+| Time to Target Temperature | Estimated cooling/heating time, with a `formatted_duration` attribute, disabled by default | s |
 | Mode | Current operating mode (standard, eco, etc.) | — |
 | Firmware | Machine firmware version (disabled by default) | — |
 | Active Keg Product ID | PerfectDraft API product ID until catalogue lookup is implemented | — |
@@ -50,6 +50,9 @@ The integration exposes controls for documented machine settings that are also v
 | Eco Mode | Switch entity backed by the documented `mode` value (`eco`/`standard`) |
 | Apply Ideal Temperature | Button that sets the machine target temperature to the current beer's ideal serving temperature |
 | Add Current Beer To Favorites | Button that adds the current keg to the PerfectDraft account favourites when it is not already a favourite |
+| Update Favorites | Diagnostic button that refreshes account favourites from the API |
+| Refresh Beer Metadata | Diagnostic button that refreshes one eligible active/favourite product page |
+| Discover New Beers | Diagnostic button that refreshes the curated PerfectDraft keg range |
 
 Pressure settings are intentionally not exposed as controls.
 
@@ -118,7 +121,7 @@ On startup, the integration seeds a local persisted catalogue from the shipped P
 
 The Available Beers diagnostic sensor reads the current keg count from the curated PerfectDraft Kegs page. Its attributes are beer names, with each value set to `In Stock`, `Out of Stock`, or `Unknown`.
 
-The Catalogue Job diagnostic sensor shows progress for manual metadata/range refresh buttons. Its state is the current job status, and attributes include job type, current item, processed/total count, percent, timestamps, and last error where applicable.
+The Catalogue Job diagnostic sensor shows progress for manual metadata, favourites, and discovery buttons. Its state is the current job status, and attributes include job type, current item, processed/total count, percent, timestamps, and last error where applicable.
 
 If a new keg appears before the shipped catalogue knows about it, use the `perfectdraft.set_local_beer` service to create a local catalogue entry for the active keg/product ID. Ideal beer temperature can come from the local catalogue, cached shop data, or a local manual override. Use the Ideal Beer Temperature number entity or the `perfectdraft.set_ideal_temperature` service to set an override for the current beer. The Apply Ideal Temperature button sets the machine target temperature to the beer's ideal temperature and is unavailable when no ideal temperature is known.
 

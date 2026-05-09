@@ -218,6 +218,14 @@ def _get_time_to_target(data: dict) -> int | None:
     return round(float(val) / 1000)
 
 
+def _format_duration(value: int | None) -> str | None:
+    if value is None:
+        return None
+    hours, remainder = divmod(max(value, 0), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 def _get_last_pour_duration(data: dict) -> int | None:
     val = _get_details(data).get("durationOfLastPour")
     return int(val) if val is not None else None
@@ -491,6 +499,12 @@ class PerfectDraftSensor(
                 )
                 or {"status": "idle"}
             )
+        if self.entity_description.key == "time_to_target_temperature":
+            return {
+                "formatted_duration": _format_duration(
+                    _get_time_to_target(self.coordinator.data or {})
+                ),
+            }
         return None
 
     @property
@@ -545,6 +559,17 @@ class PerfectDraftFavoriteBeerSensor(
         if self._index >= len(favorites):
             return {}
         return catalogue_attributes(favorites[self._index], self.coordinator.data or {})
+
+    @property
+    def entity_picture(self) -> str | None:
+        """Use cached product artwork for favourite beer sensors."""
+        favorites = favorite_product_ids(self.coordinator.data or {})
+        if self._index >= len(favorites):
+            return None
+        return catalogue_attributes(
+            favorites[self._index],
+            self.coordinator.data or {},
+        ).get("image_url")
 
 
 class PerfectDraftKegFreshnessSensor(

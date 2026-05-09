@@ -36,6 +36,7 @@ async def async_setup_entry(
             PerfectDraftApplyIdealTemperatureButton(coordinator),
             PerfectDraftAddCurrentBeerFavoriteButton(coordinator),
             PerfectDraftRefreshMetadataButton(coordinator),
+            PerfectDraftUpdateFavoritesButton(coordinator),
             PerfectDraftUpdateAvailableBeersButton(coordinator),
         ]
     )
@@ -234,10 +235,63 @@ class PerfectDraftRefreshMetadataButton(
         _push_beer_data_update(self.coordinator)
 
 
+class PerfectDraftUpdateFavoritesButton(
+    CoordinatorEntity[PerfectDraftDataUpdateCoordinator], ButtonEntity
+):
+    """Refresh account favourites from the PerfectDraft API."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "update_favorites"
+    _attr_icon = "mdi:star-sync"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: PerfectDraftDataUpdateCoordinator,
+    ) -> None:
+        super().__init__(coordinator)
+        machine_id = (coordinator.data or {}).get("_machine_id", "unknown")
+        self._attr_unique_id = f"{machine_id}_update_favorites"
+        self._attr_device_info = device_info(coordinator)
+
+    async def async_press(self) -> None:
+        """Refresh coordinator data so favourite beer sensors update now."""
+        await self.coordinator.beer_data.async_set_job_status(
+            "running",
+            job_type="favorites_refresh",
+            current_item="PerfectDraft account favorites",
+            processed=0,
+            total=1,
+        )
+        _push_beer_data_update(self.coordinator)
+        try:
+            await self.coordinator.async_request_refresh()
+        except Exception as err:
+            await self.coordinator.beer_data.async_set_job_status(
+                "failed",
+                job_type="favorites_refresh",
+                current_item="PerfectDraft account favorites",
+                processed=0,
+                total=1,
+                last_error=str(err),
+            )
+            _push_beer_data_update(self.coordinator)
+            raise
+
+        await self.coordinator.beer_data.async_set_job_status(
+            "completed",
+            job_type="favorites_refresh",
+            current_item="PerfectDraft account favorites",
+            processed=1,
+            total=1,
+        )
+        _push_beer_data_update(self.coordinator)
+
+
 class PerfectDraftUpdateAvailableBeersButton(
     CoordinatorEntity[PerfectDraftDataUpdateCoordinator], ButtonEntity
 ):
-    """Refresh the curated available beer list."""
+    """Discover beers from the curated keg list."""
 
     _attr_has_entity_name = True
     _attr_translation_key = "update_available_beers"
@@ -255,7 +309,7 @@ class PerfectDraftUpdateAvailableBeersButton(
         self._attr_device_info = device_info(coordinator)
 
     async def async_press(self) -> None:
-        """Refresh the available beers count/list from the curated range page."""
+        """Refresh the beer count/list from the curated range page."""
         await self.coordinator.beer_data.async_set_job_status(
             "running",
             job_type="available_beers",
