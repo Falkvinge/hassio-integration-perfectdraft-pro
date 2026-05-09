@@ -230,7 +230,7 @@ class PerfectDraftApiClient:
         payload = {
             key: current_setting[key]
             for key in SETTING_WRITE_FIELDS
-            if key in current_setting
+            if key in current_setting and current_setting[key] is not None
         }
         payload.update(updates)
         return await self._request(
