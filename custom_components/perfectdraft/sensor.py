@@ -1,8 +1,11 @@
 """Sensor entities for PerfectDraft."""
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 from homeassistant.components.sensor import (
@@ -24,7 +27,21 @@ from .const import DOMAIN, keg_changed_signal
 from .coordinator import PerfectDraftDataUpdateCoordinator
 from .keg_detection import KEG_TOTAL_VOLUME, detect_keg_change
 
+_LOGGER = logging.getLogger(__name__)
+
 KEG_FRESHNESS_DAYS = 30
+
+
+def _load_keg_catalog() -> dict[int, str]:
+    try:
+        raw = json.loads((Path(__file__).parent / "keg_catalog.json").read_text())
+        return {int(k): v for k, v in raw.items()}
+    except (OSError, ValueError) as err:
+        _LOGGER.debug("Could not load keg catalog: %s", err)
+        return {}
+
+
+_KEG_CATALOG: dict[int, str] = _load_keg_catalog()
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -88,6 +105,33 @@ def _get_mode(data: dict) -> str | None:
     return setting.get("mode")
 
 
+def _get_keg_product_id(data: dict) -> int | None:
+    ref = (data.get("kegActive") or {}).get("keg")
+    if not ref:
+        return None
+    try:
+        return int(str(ref).rstrip("/").rsplit("/", 1)[-1])
+    except ValueError:
+        return None
+
+
+def _get_keg_name(data: dict) -> str | None:
+    product_id = _get_keg_product_id(data)
+    if product_id is None:
+        return None
+    return _KEG_CATALOG.get(product_id)
+
+
+def _keg_inserted_at(data: dict) -> datetime | None:
+    iso = (data.get("kegActive") or {}).get("insertedAt")
+    if not iso:
+        return None
+    try:
+        return datetime.fromisoformat(iso)
+    except (ValueError, TypeError):
+        return None
+
+
 SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
     PerfectDraftSensorDescription(
         key="temperature",
@@ -106,6 +150,18 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         icon="mdi:keg",
         suggested_display_precision=0,
         value_fn=_get_volume_remaining,
+    ),
+    PerfectDraftSensorDescription(
+        key="keg_product_id",
+        translation_key="keg_product_id",
+        icon="mdi:barcode",
+        value_fn=_get_keg_product_id,
+    ),
+    PerfectDraftSensorDescription(
+        key="keg_name",
+        translation_key="keg_name",
+        icon="mdi:beer",
+        value_fn=_get_keg_name,
     ),
     PerfectDraftSensorDescription(
         key="connection",
@@ -200,9 +256,10 @@ class PerfectDraftKegFreshnessSensor(
 ):
     """Tracks keg freshness as a 30-day countdown from insertion.
 
-    Detects new keg insertion when numberOfPoursSinceStartup resets to 0
-    and kegVolume is near full. Persists the insertion timestamp across
-    HA restarts via RestoreEntity.
+    Prefers the insertion date reported by the API's active keg. When that is
+    unavailable it falls back to detecting insertion locally (pour count reset
+    with a near-full keg). The date is persisted across HA restarts via
+    RestoreEntity.
     """
 
     _attr_has_entity_name = True
@@ -261,27 +318,30 @@ class PerfectDraftKegFreshnessSensor(
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Detect new keg insertion on each data update."""
+        """Update the insertion date on each poll."""
         data = self.coordinator.data
         if not data:
             super()._handle_coordinator_update()
             return
 
-        details = data.get("details") or {}
-        pours = details.get("numberOfPoursSinceStartup")
-        volume = details.get("kegVolume")
+        reported = _keg_inserted_at(data)
+        if reported is not None:
+            self._keg_inserted_at = reported
+        else:
+            details = data.get("details") or {}
+            pours = details.get("numberOfPoursSinceStartup")
+            volume = details.get("kegVolume")
+            if pours is not None and volume is not None:
+                if detect_keg_change(
+                    last_pours=self._last_pours,
+                    last_volume=self._last_volume,
+                    pours=int(pours),
+                    volume=float(volume),
+                ):
+                    self._keg_inserted_at = datetime.now(timezone.utc)
 
-        if pours is not None and volume is not None:
-            if detect_keg_change(
-                last_pours=self._last_pours,
-                last_volume=self._last_volume,
-                pours=int(pours),
-                volume=float(volume),
-            ):
-                self._keg_inserted_at = datetime.now(timezone.utc)
-
-            self._last_pours = int(pours)
-            self._last_volume = float(volume)
+                self._last_pours = int(pours)
+                self._last_volume = float(volume)
 
         super()._handle_coordinator_update()
 
@@ -304,17 +364,25 @@ class PerfectDraftKegFreshnessSensor(
 
         self.async_write_ha_state()
 
+    def _inserted_at(self) -> datetime | None:
+        """The current insertion date, preferring the live API value."""
+        if self.coordinator.data:
+            reported = _keg_inserted_at(self.coordinator.data)
+            if reported is not None:
+                return reported
+        return self._keg_inserted_at
+
     @property
     def native_value(self) -> int | None:
-        if self._keg_inserted_at is None:
+        inserted = self._inserted_at()
+        if inserted is None:
             return None
-        elapsed = (datetime.now(timezone.utc) - self._keg_inserted_at).days
-        remaining = KEG_FRESHNESS_DAYS - elapsed
-        return max(remaining, 0)
+        elapsed = (datetime.now(timezone.utc) - inserted).days
+        return max(KEG_FRESHNESS_DAYS - elapsed, 0)
 
     @property
     def available(self) -> bool:
-        return super().available and self._keg_inserted_at is not None
+        return super().available and self._inserted_at() is not None
 
 
 def _device_info(

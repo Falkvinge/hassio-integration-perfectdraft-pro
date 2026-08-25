@@ -187,3 +187,17 @@ class PerfectDraftApiClient:
         return await self._request(
             "GET", f"/api/perfectdraft_machines/{machine_id}"
         )
+
+    async def get_machine_active_keg(self, machine_id: str) -> dict[str, Any]:
+        """GET the machine serialized with the active-keg group.
+
+        Returns the machine with a ``kegActive`` object holding the currently
+        tapped keg's product reference and its insertion date. This group is
+        mutually exclusive with the default status fields, so it needs its own
+        request alongside get_machine_details.
+        """
+        return await self._request(
+            "GET",
+            f"/api/perfectdraft_machines/{machine_id}",
+            params={"groups[]": "perfectdraft_keg_active_read"},
+        )
