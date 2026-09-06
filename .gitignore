@@ -4,6 +4,8 @@
 __pycache__/
 *.pyc
 .venv/
+.venv-test/
+.pytest_cache/
 .credentials.json
 *.swp
 custom_components/perfectdraft.zip
