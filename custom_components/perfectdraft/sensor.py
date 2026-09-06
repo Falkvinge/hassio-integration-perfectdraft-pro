@@ -26,6 +26,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, keg_changed_signal
 from .coordinator import PerfectDraftDataUpdateCoordinator
 from .keg_detection import KEG_TOTAL_VOLUME, detect_keg_change
+from .temperature import beer_temperature
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,11 +57,7 @@ def _get_details(data: dict) -> dict:
 
 
 def _get_temperature(data: dict) -> float | None:
-    val = _get_details(data).get("displayedBeerTemperatureInCelsius")
-    if val is not None and val != 0:
-        return float(val)
-    val = _get_details(data).get("temperature")
-    return float(val) if val is not None else None
+    return beer_temperature(_get_details(data))
 
 
 def _get_volume_remaining(data: dict) -> float | None:
