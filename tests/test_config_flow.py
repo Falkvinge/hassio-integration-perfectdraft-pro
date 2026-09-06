@@ -6,7 +6,10 @@ unconditionally. During reauth the unique ID belongs to the entry being
 repaired, so the duplicate guard aborted the flow with ``already_configured``
 and the freshly issued tokens were discarded.
 """
+import ast
+import json
 import unittest
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 try:
@@ -210,6 +213,37 @@ async def test_reauth_recovers_missing_machine_id(hass: HomeAssistant) -> None:
     assert entry.data[CONF_MACHINE_ID] == MACHINE_ID
 
 
+async def test_add_integration_while_reauth_pending(hass: HomeAssistant) -> None:
+    """The path a stuck user takes: give up on reauth, try Add Integration.
+
+    `async_set_unique_id` raises `already_in_progress` because the parked
+    reauth flow holds the same unique ID. This is what makes that abort
+    reason reachable, and therefore something that needs a translation.
+    """
+    entry = _entry(hass)
+    client = _mock_client()
+
+    with (
+        patch(CLIENT_PATH, return_value=client),
+        patch(SETUP_PATH, return_value=True),
+    ):
+        await entry.start_reauth_flow(hass)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"recaptcha_token": TOKEN}
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_in_progress"
+
+
 # --- User setup: must be unchanged by this fix ---
 
 
@@ -286,16 +320,66 @@ async def test_user_setup_connection_error(hass: HomeAssistant) -> None:
 
 # --- Translations must cover every reachable abort reason ---
 
+COMPONENT_DIR = Path(__file__).parent.parent / "custom_components" / "perfectdraft"
 
-@pytest.mark.parametrize(
-    "reason",
-    ["already_configured", "reauth_successful", "reauth_account_mismatch"],
-)
-def test_abort_reasons_are_translated(reason: str) -> None:
-    import json
-    from pathlib import Path
+# Flow helpers that can abort, and the reason each raises when the call site
+# passes no explicit reason=.
+ABORT_HELPERS = {
+    "_abort_if_unique_id_configured": "already_configured",
+    "_abort_if_unique_id_mismatch": "unique_id_mismatch",
+    "async_update_reload_and_abort": "reauth_successful",
+    "async_set_unique_id": "already_in_progress",
+    "async_abort": None,
+}
 
-    root = Path(__file__).parent.parent / "custom_components" / "perfectdraft"
-    for name in ("strings.json", "translations/en.json"):
-        data = json.loads((root / name).read_text(encoding="utf-8"))
-        assert reason in data["config"]["abort"], f"{reason} missing from {name}"
+
+def _abort_reasons_in_source() -> set[str]:
+    """Every abort reason config_flow.py can emit, read out of the source.
+
+    Deriving this beats listing it by hand: a hand-written list is exactly
+    what let `already_in_progress` ship without a translation, because the
+    test only ever checked the reasons its author already knew about.
+    """
+    tree = ast.parse((COMPONENT_DIR / "config_flow.py").read_text(encoding="utf-8"))
+    reasons: set[str] = set()
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            continue
+        if node.func.attr not in ABORT_HELPERS:
+            continue
+
+        keywords = {kw.arg: kw.value for kw in node.keywords}
+
+        # async_set_unique_id only races when it is allowed to.
+        if node.func.attr == "async_set_unique_id":
+            opt_out = keywords.get("raise_on_progress")
+            if isinstance(opt_out, ast.Constant) and opt_out.value is False:
+                continue
+
+        explicit = keywords.get("reason")
+        if isinstance(explicit, ast.Constant):
+            reasons.add(explicit.value)
+        elif ABORT_HELPERS[node.func.attr] is not None:
+            reasons.add(ABORT_HELPERS[node.func.attr])
+
+    return reasons
+
+
+def test_abort_reason_scanner_sees_the_known_reasons() -> None:
+    """Guards the scanner itself: a blind scanner would pass silently."""
+    assert {
+        "already_configured",
+        "already_in_progress",
+        "reauth_account_mismatch",
+        "reauth_successful",
+    } <= _abort_reasons_in_source()
+
+
+@pytest.mark.parametrize("filename", ["strings.json", "translations/en.json"])
+def test_every_abort_reason_is_translated(filename: str) -> None:
+    declared = json.loads(
+        (COMPONENT_DIR / filename).read_text(encoding="utf-8")
+    )["config"]["abort"]
+    missing = sorted(_abort_reasons_in_source() - set(declared))
+    assert not missing, f"{filename} is missing abort reasons: {missing}"
