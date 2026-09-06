@@ -98,12 +98,22 @@ The integration SHALL declare a minimum supported Home Assistant core version of
 - **WHEN** a user attempts to install the integration through HACS on a core older than 2024.11.0
 - **THEN** HACS SHALL refuse the installation and report the minimum version, rather than allowing an install that fails at runtime
 
-### Requirement: Account mismatch abort is translated
-Every abort reason the config flow can emit SHALL have a corresponding entry under `config.abort` in `strings.json` and `translations/en.json`, so no user ever sees an untranslated reason key.
+### Requirement: All abort reasons are translated
+Every abort reason the config flow can emit SHALL have a corresponding entry under `config.abort` in `strings.json` and `translations/en.json`, so no user ever sees an untranslated reason key. The set of reasons SHALL be derived from the flow's source rather than maintained by hand, so that a newly reachable abort cannot ship untranslated.
 
 #### Scenario: Mismatch message is rendered
 - **WHEN** the reauth flow aborts with reason `reauth_account_mismatch`
 - **THEN** the dialog SHALL render a translated message explaining that the credentials belong to a different account than the one being re-authenticated
+
+#### Scenario: Concurrent flow for the same account is rejected
+- **WHEN** a reauth flow is pending for an entry and the user starts a user-initiated setup for the same email
+- **THEN** the second flow SHALL abort with reason `already_in_progress`
+- **THEN** that reason SHALL render a translated message telling the user to finish or cancel the pending flow
+
+#### Scenario: Abort reasons are enumerated from the source
+- **WHEN** the translation coverage check runs
+- **THEN** it SHALL enumerate abort reasons by inspecting the calls `config_flow.py` makes to aborting flow helpers, including reasons those helpers raise by default
+- **THEN** it SHALL fail if any enumerated reason is absent from either translation file
 
 ### Requirement: Options flow for polling interval
 The integration SHALL provide an OptionsFlow to change the polling interval.

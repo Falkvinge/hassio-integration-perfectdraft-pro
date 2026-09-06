@@ -64,3 +64,18 @@ Confirmed failing against unfixed code: 8 failed, 7 passed. The headline asserti
 - [ ] 7.5 Archive: `mv openspec/changes/fix-reauth-flow openspec/changes/archive/<YYYY-MM-DD>-fix-reauth-flow` — held until on-device verification (6.4–6.7) confirms the fix on the live machine
 - [ ] 7.6 Remove the worktree and branch: `git worktree remove .worktree/fix-reauth-flow --force && git branch -d agent/fix-reauth-flow` — held with 7.5
 - [x] 7.7 Record the deferred item (persisting Cognito-refreshed tokens back to the config entry) as a TODO in `PROJECT_HYGIENE.md` section 11
+
+## 8. Verification follow-up (found by `openspec-verify-change`)
+
+Verification found the change violating its own "every abort reason is translated" requirement. `async_set_unique_id()` defaults to `raise_on_progress=True` and raises `already_in_progress` when another flow holds the same unique ID — reachable when a user parks a reauth flow and then tries Add Integration for the same account. Task 5.3's test hardcoded three reasons, so it asserted a "for every" requirement against a hand-written list and passed regardless.
+
+- [x] 8.1 Confirm reachability empirically rather than by reading HA source: park a reauth flow, start a user flow for the same email, observe the abort reason
+- [x] 8.2 Add `already_in_progress` to `strings.json` and `translations/en.json`
+- [x] 8.3 Replace the hardcoded reason list with an AST scan of `config_flow.py` that resolves each aborting helper call to the reason it raises, honouring explicit `reason=` and the `raise_on_progress=False` opt-out
+- [x] 8.4 Add a scanner sanity test, so a scanner that silently stops finding reasons fails instead of passing
+- [x] 8.5 Add a regression test for the concurrent-flow abort path itself
+- [x] 8.6 Confirm the new check fails against the pre-fix translation files and passes after
+- [x] 8.7 Update the delta spec and main spec: rename the requirement to "All abort reasons are translated" and add the two new scenarios
+- [ ] 8.8 On-device: confirm the `already_in_progress` dialog renders the message rather than the raw key
+
+Still open from verification, not blocking archive: the `reauth_confirm` email pre-fill and unique-ID lowercasing at setup are implemented and manually confirmed but unasserted; a mismatched-account reauth on an entry with no recorded machine ID makes one wasted `/api/me` call before aborting.
