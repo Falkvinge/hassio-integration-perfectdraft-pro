@@ -1,0 +1,18 @@
+# Test-only dependencies. The integration itself stays dependency-free
+# (manifest.json keeps "requirements": []); this harness exists because
+# config-flow behaviour cannot be exercised without a real Home Assistant.
+#
+# pytest-homeassistant-custom-component releases track core one-to-one.
+# 0.13.205 is the newest release that still supports Python 3.12 and it
+# pins core 2025.1.4 — above the 2024.11 floor the reauth helpers need.
+#
+#   python3 -m venv .venv-test
+#   .venv-test/bin/pip install -r requirements-test.txt
+#   .venv-test/bin/pytest tests/
+pytest-homeassistant-custom-component==0.13.205
+
+# Core pins aiodns==3.2.0 but leaves pycares floating. pycares 4.6+ starts a
+# daemon shutdown thread that the harness's verify_cleanup fixture flags as a
+# leak, failing every test at teardown. 4.5.0 is contemporaneous with core
+# 2025.1.4 and has no such thread.
+pycares==4.5.0

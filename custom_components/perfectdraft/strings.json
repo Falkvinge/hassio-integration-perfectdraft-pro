@@ -32,7 +32,8 @@
     },
     "abort": {
       "already_configured": "This PerfectDraft account is already configured.",
-      "reauth_successful": "Re-authentication successful."
+      "reauth_successful": "Re-authentication successful.",
+      "reauth_account_mismatch": "Those credentials are for a different PerfectDraft account. Re-authenticate with the account this integration was set up with, or delete the integration and add the other account separately."
     }
   },
   "entity": {

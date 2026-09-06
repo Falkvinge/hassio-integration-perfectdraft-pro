@@ -89,25 +89,27 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.error("API error during auth: %s", err)
                 errors["base"] = "unknown"
             else:
+                reauth_entry = (
+                    self._get_reauth_entry()
+                    if self.source == config_entries.SOURCE_REAUTH
+                    else None
+                )
+                machine_id = (
+                    reauth_entry.data.get(CONF_MACHINE_ID) if reauth_entry else None
+                )
+
+                if machine_id:
+                    return await self._async_persist(
+                        client, reauth_entry, machine_id
+                    )
+
                 try:
                     profile = await client.get_user_profile()
                 except (PerfectDraftApiError, PerfectDraftConnectionError):
                     errors["base"] = "cannot_connect"
                 else:
-                    machine_id = _extract_machine_id(profile)
-
-                    await self.async_set_unique_id(self._email.lower())
-                    self._abort_if_unique_id_configured()
-
-                    return self.async_create_entry(
-                        title=f"PerfectDraft ({self._email})",
-                        data={
-                            CONF_EMAIL: self._email,
-                            CONF_ACCESS_TOKEN: client.access_token,
-                            CONF_ID_TOKEN: client.id_token,
-                            CONF_REFRESH_TOKEN: client.refresh_token,
-                            CONF_MACHINE_ID: machine_id,
-                        },
+                    return await self._async_persist(
+                        client, reauth_entry, _extract_machine_id(profile)
                     )
 
         return self.async_show_form(
@@ -118,6 +120,41 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+    async def _async_persist(
+        self,
+        client: PerfectDraftApiClient,
+        reauth_entry: config_entries.ConfigEntry | None,
+        machine_id: str | None,
+    ) -> config_entries.ConfigFlowResult:
+        """Store the freshly issued tokens.
+
+        Reauth must update the entry it was started for. Creating a new one
+        would change the entry_id and orphan every entity's unique_id, and
+        `_abort_if_unique_id_configured` cannot be used here at all: during
+        reauth the unique ID belongs to that very entry, so the duplicate
+        guard would abort the flow and discard the new tokens.
+        """
+        data = {
+            CONF_ACCESS_TOKEN: client.access_token,
+            CONF_ID_TOKEN: client.id_token,
+            CONF_REFRESH_TOKEN: client.refresh_token,
+            CONF_MACHINE_ID: machine_id,
+        }
+
+        await self.async_set_unique_id(self._email.lower())
+
+        if reauth_entry is not None:
+            self._abort_if_unique_id_mismatch(reason="reauth_account_mismatch")
+            return self.async_update_reload_and_abort(
+                reauth_entry, data_updates=data
+            )
+
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=f"PerfectDraft ({self._email})",
+            data={CONF_EMAIL: self._email, **data},
         )
 
     async def async_step_reauth(
