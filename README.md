@@ -7,7 +7,8 @@ A Home Assistant custom integration for the [PerfectDraft Pro](https://www.perfe
 | Sensor | Description | Unit |
 |--------|-------------|------|
 | Temperature | Current beer temperature | °C |
-| Keg | Name of the tapped beer, resolved from a bundled catalog | — |
+| Keg | Name of the tapped beer, resolved from a [bundled catalog](#the-keg-name-catalog) of 114 kegs | — |
+| Keg Product | Numeric product ID of the fitted keg | — |
 | Keg Remaining | Beer left in the keg | % |
 | Keg Freshness | Days remaining until 30-day freshness expires | days |
 | Connection | Machine connectivity status | — |
@@ -73,3 +74,20 @@ Install via HACS (Dashboard category) or see the [card repository](https://githu
 The integration communicates with PerfectDraft's cloud API to read your machine's telemetry data. Token refresh is handled automatically via AWS Cognito — no reCAPTCHA needed after the initial setup.
 
 For the full technical story of how this integration was reverse-engineered, see [DISCOVERY.md](DISCOVERY.md).
+
+### The keg name catalog
+
+The machine reports the fitted keg as a numeric product ID, not a name. `custom_components/perfectdraft/keg_catalog.json` maps those IDs to beer names, and the `Keg` sensor is that lookup.
+
+The catalog is maintained by hand, because it has to be: the PerfectDraft API will not return the ID-to-name mapping in bulk, so there is no endpoint to scrape and no way to infer an entry. Every one of the 114 names was observed directly from a machine with that keg actually fitted. It covers kegs that are no longer sold, since a discontinued keg can still be sitting in someone's machine.
+
+If your `Keg` sensor is blank, the machine is reporting an ID the catalog does not have. Open an issue with the value of the `Keg Product` sensor and it can be added.
+
+## Credits
+
+The keg name sensor and everything behind it are the work of **[Brett Jenkins](https://github.com/brettjenkins)**, contributed from his fork at [brettjenkins/hassio-integration-perfectdraft-pro](https://github.com/brettjenkins/hassio-integration-perfectdraft-pro):
+
+- **Active-keg detection and the `Keg` / `Keg Product` sensors** — [#2](https://github.com/Falkvinge/hassio-integration-perfectdraft-pro/pull/2), which also made keg freshness read from the API's own insertion date instead of waiting for a client-side detection, so the countdown is right immediately after setup rather than after the next keg change.
+- **The keg name catalog** — the entire 114-entry mapping, built up across [his fork's #1](https://github.com/brettjenkins/hassio-integration-perfectdraft-pro/pull/1) and backported here. Brett also caught four names this repo had wrong, including one beer that had been renamed by the brewery and three carrying leftover shop-listing text.
+
+The same mapping drives the tap sign at [seemy.beer](https://seemy.beer), where it has been running in production.
