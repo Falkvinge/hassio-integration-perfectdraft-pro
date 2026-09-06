@@ -36,8 +36,17 @@ Provenance of the added data, from the fork's commit `0982d20`: the product IDs 
 
 ## Decisions
 
-**Take the fork's file wholesale rather than merging entry-by-entry.**
-The fork's version is a strict superset of ours except for the four corrections, and it preserves our formatting convention (no indentation, numeric key order). Copying the file gives the same result as a hand-merge with less room for transcription error, and the resulting diff is reviewable line-by-line anyway. Alternative considered: cherry-pick `0982d20`. Rejected because the histories share only a pre-v0.1 merge-base, so a cherry-pick would drag in unrelated context and conflict; the file is self-contained data and copying it is cleaner than fighting git.
+**Cherry-pick Brett's commit rather than copying the file.**
+
+*Revised during apply — the original decision here was to copy the file and reject a cherry-pick on the assumption that the pre-v0.1 merge-base would make it conflict. That assumption was wrong and worth correcting, because the cherry-pick is the better option on both provenance and credit.*
+
+`0982d20` touches exactly one file, and that file at `0982d20^` is byte-identical to `master`'s copy. The merge-base is irrelevant: a cherry-pick only needs the touched blob to match, so it applies cleanly with no conflict.
+
+That matters beyond convenience. Copying the data would land 28 observed keg names under the committer's name with the original author erased from the record. Cherry-picking preserves `Brett Jenkins <brett@brettjenkins.co.uk>` as author and carries his commit message — which is where the provenance actually lives, since it documents that the IDs were observed from machines and explains each of the four corrections. `-x` records the source SHA, and `Backported-from` / `Backported-via` trailers name the fork and PR, which the bare SHA does not.
+
+So the attribution is structural rather than a courtesy note: `git log --author` and `git blame` both attribute the catalog correctly, permanently, with no dependence on anyone remembering to mention it.
+
+Rick's own follow-up work (version bump, README credit, format tests) goes in a separate commit so Brett's stays pure data.
 
 **Accept the four name corrections, reject the eleven styling changes.**
 The corrections fix real errors: `32814` displays a beer that no longer exists under that name, and three entries carry shop-listing cruft (`Short Date`, `6L Keg`, a 2024 best-before date) that is not part of the beer's name. The styling differences (`Trooper`/`TROOPER`, `St`/`Saint Feuillien`) are cosmetic, the current spellings match the shop, and changing them would churn the diff for no user benefit. This matches the fork author's own reasoning.
@@ -59,7 +68,9 @@ Adding catalog data changes no behaviour contract and no requirement that existi
 
 **The four corrections surprise a user whose automation matches on the `Keg` sensor's string** → Real but unavoidable; the current strings are wrong. Three of them contain a 2024 best-before date or a pack size, which no sane automation would match deliberately. Call the corrections out in the release notes.
 
-**The catalog keeps drifting as PerfectDraft adds products, and nothing records where these names came from** → Out of scope here, but worth its own change. Today the only record that these entries were measured rather than guessed is a commit message on someone else's fork. Options for later: a `_meta` key in the catalog, or making an unmapped ID surface the raw product number so users can report gaps.
+**The catalog keeps drifting as PerfectDraft adds products** → Out of scope here, but worth its own change. Partly mitigated now: the cherry-pick puts the provenance in `git log` and `git blame` rather than in a commit message on someone else's fork, and the README explains why the file is hand-maintained and how to report a missing ID.
+
+**A future attempt to embed metadata in the catalog would silently disable it** → Discovered during apply, and it invalidates the obvious next step. `_load_keg_catalog` builds `{int(k): v for k, v in raw.items()}` and catches `ValueError` by returning `{}`. So adding a `_meta` or `_source` key — the natural way to record provenance in the file itself — makes `int("_meta")` raise, swallows the exception, and leaves every keg with no name and only a debug-level log line. Any such change must touch the loader first. `tests/test_keg_catalog.py::test_keys_are_numeric` now fails loudly if anyone tries, and documents why in its docstring.
 
 ## Open Questions
 
