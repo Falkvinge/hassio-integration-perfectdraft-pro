@@ -28,7 +28,10 @@
 
 ## 5. Verify on the machine
 
-**BLOCKED — needs the repo owner.** No Home Assistant instance is reachable from the
+**DEFERRED to post-release on-device check — carried as verification debt.**
+The v0.3.2 release exists so the owner can install via HACS and run this group live.
+
+**Why it could not be done here.** No Home Assistant instance is reachable from the
 dev host (nothing on `localhost:8123`), and the standalone route failed too: the
 refresh token in `.credentials.json` is expired, so `refresh_access_token()` returns
 `NotAuthorizedException: Refresh Token has expired`. Recovering it needs the browser
@@ -54,6 +57,6 @@ fitted keg after the file was replaced wholesale.
 - [x] 6.1 Run `openspec validate --changes backport-keg-catalog` and fix any reported issues
 - [x] 6.2 Commit in the worktree with a message explaining the provenance of the data and naming the 4 corrections
 - [x] 6.3 Mark tasks complete and commit the artifact updates in the main checkout
-- [ ] 6.4 Sync the `entities` delta into `openspec/specs/entities/spec.md`
-- [ ] 6.5 Merge `agent/backport-keg-catalog` into `master`, push, and archive the change
-- [ ] 6.6 Remove the worktree and branch: `git worktree remove .worktree/backport-keg-catalog --force && git branch -d agent/backport-keg-catalog`
+- [x] 6.4 Sync the `entities` delta into `openspec/specs/entities/spec.md`
+- [x] 6.5 Merge `agent/backport-keg-catalog` into `master`, push, and archive the change
+- [x] 6.6 Remove the worktree and branch: `git worktree remove .worktree/backport-keg-catalog --force && git branch -d agent/backport-keg-catalog`
