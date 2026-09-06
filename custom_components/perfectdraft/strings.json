@@ -39,6 +39,8 @@
     "sensor": {
       "temperature": { "name": "Temperature" },
       "keg_remaining": { "name": "Keg Remaining" },
+      "keg_product_id": { "name": "Keg Product" },
+      "keg_name": { "name": "Keg" },
       "connection": { "name": "Connection" },
       "door": { "name": "Door" },
       "pours": { "name": "Pours" },

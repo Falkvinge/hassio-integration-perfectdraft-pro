@@ -82,4 +82,13 @@ class PerfectDraftDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
 
         details["_machine_id"] = machine_id
+
+        # The active keg lives behind a separate serialization group. Treat it
+        # as best-effort so a failure here doesn't take the whole device down.
+        try:
+            active = await self.client.get_machine_active_keg(machine_id)
+            details["kegActive"] = active.get("kegActive")
+        except (PerfectDraftApiError, PerfectDraftConnectionError) as err:
+            _LOGGER.debug("Active keg lookup failed: %s", err)
+
         return details
