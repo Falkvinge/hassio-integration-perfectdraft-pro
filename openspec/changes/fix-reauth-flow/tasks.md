@@ -52,8 +52,8 @@ Confirmed failing against unfixed code: 8 failed, 7 passed. The headline asserti
 - [x] 6.3 `python3 -m compileall -q custom_components/perfectdraft/` is clean
 - [x] 6.4 On-device: reauth repair appeared on the live instance running the v0.3.1 release build
 - [x] 6.5 On-device: reauth completed and ended on "Re-authentication successful" — not "already configured". Screenshot confirmed 2026-09-06.
-- [ ] 6.6 On-device: confirm the integration polls successfully afterwards, entity history is continuous, and the keg-freshness baseline survived (no reset to unknown)
-- [ ] 6.7 On-device: confirm entering a different account's email during reauth is rejected with the mismatch message
+- [ ] 6.6 **NOT VERIFIED — blocked, no keg fitted.** Confirm the integration polls successfully afterwards, entity history is continuous, and the keg-freshness baseline survived (no reset to unknown). The machine had no keg in the tap when the change was archived, so Keg Remaining and Keg Freshness had no meaningful baseline to preserve and the check could not be made. Re-run when a new keg is fitted: after the next keg change, confirm the freshness countdown persists across a reauth rather than resetting to unknown.
+- [ ] 6.7 **NOT RUN.** Confirm entering a different account's email during reauth is rejected with the mismatch message. Covered by `test_reauth_rejects_a_different_account`; on-device confirmation is cosmetic (checks the dialog renders the string) and was skipped as non-blocking.
 
 ## 7. Close out
 
@@ -61,8 +61,8 @@ Confirmed failing against unfixed code: 8 failed, 7 passed. The headline asserti
 - [x] 7.2 Merge into `master` from the main checkout
 - [x] 7.3 Push `master` to `origin` (git.falkvinge.net) and to `github` so both remotes stay at parity
 - [x] 7.4 Sync the delta spec into `openspec/specs/config-flow/spec.md` to reflect what was actually built
-- [ ] 7.5 Archive: `mv openspec/changes/fix-reauth-flow openspec/changes/archive/<YYYY-MM-DD>-fix-reauth-flow` — held until on-device verification (6.4–6.7) confirms the fix on the live machine
-- [ ] 7.6 Remove the worktree and branch: `git worktree remove .worktree/fix-reauth-flow --force && git branch -d agent/fix-reauth-flow` — held with 7.5
+- [x] 7.5 Archive: `mv openspec/changes/fix-reauth-flow openspec/changes/archive/2026-09-06-fix-reauth-flow`. Archived with 6.6, 6.7 and 8.8 unverified — see the notes on those tasks. The defect this change exists to fix (6.4/6.5) was confirmed on the live machine running the v0.3.1 release build.
+- [x] 7.6 Remove the worktree and branch: `git worktree remove .worktree/fix-reauth-flow --force && git branch -d agent/fix-reauth-flow`
 - [x] 7.7 Record the deferred item (persisting Cognito-refreshed tokens back to the config entry) as a TODO in `PROJECT_HYGIENE.md` section 11
 
 ## 8. Verification follow-up (found by `openspec-verify-change`)
@@ -76,6 +76,6 @@ Verification found the change violating its own "every abort reason is translate
 - [x] 8.5 Add a regression test for the concurrent-flow abort path itself
 - [x] 8.6 Confirm the new check fails against the pre-fix translation files and passes after
 - [x] 8.7 Update the delta spec and main spec: rename the requirement to "All abort reasons are translated" and add the two new scenarios
-- [ ] 8.8 On-device: confirm the `already_in_progress` dialog renders the message rather than the raw key
+- [ ] 8.8 **NOT RUN.** Confirm the `already_in_progress` dialog renders the message rather than the raw key. Covered by `test_every_abort_reason_is_translated`, which proves the key exists in both translation files; the on-device check only confirms the frontend picks it up. Skipped as non-blocking.
 
 Still open from verification, not blocking archive: the `reauth_confirm` email pre-fill and unique-ID lowercasing at setup are implemented and manually confirmed but unasserted; a mismatched-account reauth on an entry with no recorded machine ID makes one wasted `/api/me` call before aborting.
