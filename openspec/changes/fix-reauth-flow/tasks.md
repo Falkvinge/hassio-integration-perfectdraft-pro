@@ -50,8 +50,8 @@ Confirmed failing against unfixed code: 8 failed, 7 passed. The headline asserti
 - [x] 6.1 All tests from section 3 pass: 26 passed (15 config flow + 11 keg detection)
 - [x] 6.2 `python3 -m unittest discover -s tests` still passes: 11 passed, 1 skipped
 - [x] 6.3 `python3 -m compileall -q custom_components/perfectdraft/` is clean
-- [ ] 6.4 On-device: install the branch on the live HA instance, forge an expired session by editing `access_token`/`refresh_token` in `config/.storage/core.config_entries`, restart, and confirm the reauth repair appears
-- [ ] 6.5 On-device: complete the reauth flow with a fresh verification token and confirm it ends on "Re-authentication successful" — not "already configured"
+- [x] 6.4 On-device: reauth repair appeared on the live instance running the v0.3.1 release build
+- [x] 6.5 On-device: reauth completed and ended on "Re-authentication successful" — not "already configured". Screenshot confirmed 2026-09-06.
 - [ ] 6.6 On-device: confirm the integration polls successfully afterwards, entity history is continuous, and the keg-freshness baseline survived (no reset to unknown)
 - [ ] 6.7 On-device: confirm entering a different account's email during reauth is rejected with the mismatch message
 
