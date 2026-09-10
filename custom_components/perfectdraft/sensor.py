@@ -96,6 +96,11 @@ def _get_last_pour_volume(data: dict) -> float | None:
     return round(float(val) * 1000)  # litres -> ml
 
 
+def _get_keg_pressure(data: dict) -> float | None:
+    val = _get_details(data).get("kegPressure")
+    return float(val) if val is not None else None
+
+
 def _get_firmware(data: dict) -> str | None:
     return _get_details(data).get("firmwareVersion")
 
@@ -188,6 +193,16 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         native_unit_of_measurement="mL",
         icon="mdi:glass-mug-variant",
         value_fn=_get_last_pour_volume,
+    ),
+    PerfectDraftSensorDescription(
+        key="keg_pressure",
+        translation_key="keg_pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        native_unit_of_measurement=UnitOfPressure.KPA,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:gauge",
+        suggested_display_precision=1,
+        value_fn=_get_keg_pressure,
     ),
     PerfectDraftSensorDescription(
         key="firmware",

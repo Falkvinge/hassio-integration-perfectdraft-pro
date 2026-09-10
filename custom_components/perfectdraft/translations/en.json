@@ -45,6 +45,7 @@
       "door": { "name": "Door" },
       "pours": { "name": "Pours" },
       "last_pour": { "name": "Last Pour" },
+      "keg_pressure": { "name": "Keg Pressure" },
       "firmware": { "name": "Firmware" },
       "mode": { "name": "Mode" },
       "keg_freshness": { "name": "Keg Freshness" }

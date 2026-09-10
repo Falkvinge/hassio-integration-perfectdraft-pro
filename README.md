@@ -14,6 +14,7 @@ A Home Assistant custom integration for the [PerfectDraft Pro](https://www.perfe
 | Door | Door open/closed state | — |
 | Pours | Number of pours since keg was loaded | — |
 | Last Pour | Volume of the most recent pour | mL |
+| Keg Pressure | Air pressure in the keg; drops on each pour | kPa |
 | Mode | Current operating mode (standard, eco, etc.) | — |
 | Firmware | Machine firmware version (disabled by default) | — |
 
