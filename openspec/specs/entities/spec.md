@@ -59,7 +59,7 @@ The integration SHALL expose the numeric product ID of the keg currently fitted 
 - **THEN** the sensor SHALL report no value and SHALL NOT raise
 
 ### Requirement: Keg name sensor
-The integration SHALL expose the name of the tapped beer, resolved from the keg product ID through a catalog bundled with the integration at `keg_catalog.json`. The catalog SHALL cover every keg the PerfectDraft app can select, including discontinued kegs that may still be fitted in a machine, and SHALL contain at least 114 product IDs.
+The integration SHALL expose the name of the tapped beer, resolved from the keg product ID through a catalog bundled with the integration at `keg_catalog.json`. The catalog SHALL cover every keg the PerfectDraft app can select, including discontinued kegs that may still be fitted in a machine, and SHALL contain at least 115 product IDs.
 
 Catalog entries SHALL be observed directly from a machine reporting that product ID rather than inferred from shop listings, because the product IDs cannot be queried in bulk from the API. Entry names SHALL be the beer's name only, excluding shop-listing artefacts such as pack size, "Short Date" prefixes, or best-before dates.
 
