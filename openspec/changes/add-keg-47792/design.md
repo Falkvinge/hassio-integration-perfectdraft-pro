@@ -8,7 +8,7 @@ The machine reports a numeric product ID. The integration resolves it through `k
 slug: "camden-eazy", name: "Camden Eazy", imagePath: kegs/camden-eazy.webp, kegId: "47629"
 ```
 
-The integration lists that other ID as `"47629": "Camden Eazy IPA"`. The card prefers `kegId`, so a machine reporting `47629` already shows Camden Eazy with the existing graphic. `47792` sits between Camden Eazy IPA `47629` and Old Speckled Hen `47774`.
+The integration lists that other ID as `"47629": "Camden Eazy IPA"`. The card prefers `kegId`, so a machine reporting `47629` already shows Camden Eazy with the existing graphic. `47792` follows Old Speckled Hen `47774` and precedes Corona Ligera `47816`.
 
 `GET /api/products/{id}` still returns `{id}` only. Provenance is the reporter's fitted keg and the name in the issue title.
 
