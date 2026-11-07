@@ -24,7 +24,12 @@ Work in `Hassio-PerfectDraftPro-Component`.
 
 ## 4. Joint verification
 
-- [ ] 4.1 With `fix-cognito-signin` also applied, install integration 0.3.5 and card 0.4.3 on Home Assistant; if a 48180 keg is unavailable, confirm instead that the card editor's beer picker lists the new entry with its artwork, and that `getBeerByKegId("48180")` resolves it in a browser console on the dashboard
+
+## Deferred: shipping without on-device checks
+
+Maintainer decision, 2026-11-07: ship card 0.4.3 and the 48180 catalog entry without this check (no time for a Home Assistant reinstall), as with `fix-cognito-signin` 5.2–5.4. Coverage at release: catalog unit tests (117 keys, ordering), `npm run lint`, `npm run check:catalog` (117/117) and a clean `npm run build` with the artwork in `dist/`. The open TODO is in `PROJECT_HYGIENE.md`.
+
+- 4.1 With `fix-cognito-signin` also applied, install integration 0.3.5 and card 0.4.3 on Home Assistant; if a 48180 keg is unavailable, confirm instead that the card editor's beer picker lists the new entry with its artwork, and that `getBeerByKegId("48180")` resolves it in a browser console on the dashboard
 
 ## Workflow follow-up
 
