@@ -13,7 +13,7 @@
 
 - [ ] 3.1 In `async_step_token`, map `err.kind` to `token_rejected` / `invalid_credentials` / `invalid_auth`; on `invalid_credentials` re-show the `user` form (setup) or `reauth_confirm` form (reauth) with the error instead of the token form
 - [ ] 3.2 Pass `description_placeholders={"reason": ...}` on every `async_show_form` for `user`, `reauth_confirm` and `token` (empty string when there is no error)
-- [ ] 3.3 In `strings.json` and `translations/en.json`, reword `invalid_auth` to include `{reason}` and add `invalid_credentials` and `token_rejected`; verify the two files stay identical (`diff`)
+- [x] 3.3 In `strings.json` and `translations/en.json`, reword `invalid_auth` to include `{reason}` and add `invalid_credentials` and `token_rejected`; verify the two files stay identical (`diff`)
 - [ ] 3.4 Extend `tests/test_config_flow.py`: one test per error key (setup and reauth), asserting the form step, the error key and the `reason` placeholder; update `test_reauth_bad_token_keeps_old_tokens` for the new key; add a check that every `errors["base"]` value in `config_flow.py` exists in both translation files; verify `.venv-test/bin/pytest tests/` passes
 
 ## 4. README
