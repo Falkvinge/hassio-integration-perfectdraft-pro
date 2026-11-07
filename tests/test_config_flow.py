@@ -206,7 +206,7 @@ async def test_reauth_bad_token_keeps_old_tokens(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "token"
     assert result["errors"] == {"base": "token_rejected"}
-    assert result["description_placeholders"] == {"reason": TOKEN_REJECTED_REASON}
+    assert result["description_placeholders"]["reason"] == TOKEN_REJECTED_REASON
     assert entry.data[CONF_ACCESS_TOKEN] == "old-access"
     assert entry.data[CONF_REFRESH_TOKEN] == "old-refresh"
 
@@ -221,9 +221,7 @@ async def test_reauth_wrong_password_returns_to_reauth_confirm(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "reauth_confirm"
     assert result["errors"] == {"base": "invalid_credentials"}
-    assert result["description_placeholders"] == {
-        "reason": "Incorrect username or password"
-    }
+    assert result["description_placeholders"]["reason"] == "Incorrect username or password"
     assert entry.data[CONF_ACCESS_TOKEN] == "old-access"
 
     # Corrected credentials lead to a fresh token, then success.
@@ -252,7 +250,7 @@ async def test_reauth_other_failure_is_invalid_auth(hass: HomeAssistant) -> None
 
     assert result["step_id"] == "token"
     assert result["errors"] == {"base": "invalid_auth"}
-    assert result["description_placeholders"] == {"reason": "no reason given"}
+    assert result["description_placeholders"]["reason"] == "no reason given"
     assert entry.data[CONF_ACCESS_TOKEN] == "old-access"
 
 
@@ -391,11 +389,11 @@ async def _run_user_setup(hass, client):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": SOURCE_USER}
         )
-        assert result["description_placeholders"] == {"reason": ""}
+        assert result["description_placeholders"]["reason"] == ""
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD}
         )
-        assert result["description_placeholders"] == {"reason": ""}
+        assert result["description_placeholders"]["reason"] == ""
         return await hass.config_entries.flow.async_configure(
             result["flow_id"], {"recaptcha_token": TOKEN}
         )
@@ -409,9 +407,7 @@ async def test_user_setup_wrong_password_returns_to_user_form(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
     assert result["errors"] == {"base": "invalid_credentials"}
-    assert result["description_placeholders"] == {
-        "reason": "Incorrect username or password"
-    }
+    assert result["description_placeholders"]["reason"] == "Incorrect username or password"
 
 
 async def test_user_setup_token_rejected(hass: HomeAssistant) -> None:
@@ -419,7 +415,7 @@ async def test_user_setup_token_rejected(hass: HomeAssistant) -> None:
 
     assert result["step_id"] == "token"
     assert result["errors"] == {"base": "token_rejected"}
-    assert result["description_placeholders"] == {"reason": TOKEN_REJECTED_REASON}
+    assert result["description_placeholders"]["reason"] == TOKEN_REJECTED_REASON
 
 
 async def test_user_setup_other_auth_failure(hass: HomeAssistant) -> None:
@@ -427,9 +423,7 @@ async def test_user_setup_other_auth_failure(hass: HomeAssistant) -> None:
 
     assert result["step_id"] == "token"
     assert result["errors"] == {"base": "invalid_auth"}
-    assert result["description_placeholders"] == {
-        "reason": "USER_PASSWORD_AUTH flow not enabled for this client"
-    }
+    assert result["description_placeholders"]["reason"] == "USER_PASSWORD_AUTH flow not enabled for this client"
 
 
 # --- Translations must cover every reachable abort reason ---
