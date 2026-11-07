@@ -1,13 +1,13 @@
 ## 1. Worktree
 
-- [ ] 1.1 `scripts/agent-worktree.sh create fix-cognito-signin` and confirm `.worktree/fix-cognito-signin/.agent-lock` exists on branch `agent/fix-cognito-signin`
+- [x] 1.1 `scripts/agent-worktree.sh create fix-cognito-signin` and confirm `.worktree/fix-cognito-signin/.agent-lock` exists on branch `agent/fix-cognito-signin`
 
 ## 2. API client sign-in
 
-- [ ] 2.1 Add `RECAPTCHA_DOMAIN = "https://www.perfectdraft.com"` to `const.py`; drop `RECAPTCHA_ACTION_SIGN_IN` from `api.py` in favour of `const.RECAPTCHA_ACTION`, and move `COGNITO_IDP_URL` alongside if it reads better; verify `rg RECAPTCHA_ACTION_SIGN_IN` finds nothing
-- [ ] 2.2 Give `AuthenticationError` optional `code` and `reason`, a `kind` property (`credentials` / `token` / `other`, per the design table) and a never-empty `display_reason` (trailing period stripped, at most 200 chars); existing single-argument raises still work
-- [ ] 2.3 Rewrite `authenticate()` as Cognito `InitiateAuth` `USER_PASSWORD_AUTH` with `ClientMetadata {recaptchaToken, recaptchaAction, domain}`; parse with `content_type=None`; read tokens from `AuthenticationResult`; raise `AuthenticationError` (code = `ChallengeName`) when the result is missing or incomplete; parse `__type` / `message` from rejection bodies, tolerating namespaced types and non-JSON bodies; log no secrets
-- [ ] 2.4 Add `tests/test_api_authenticate.py` (stdlib-only, loads `api.py` without Home Assistant, fake session) covering every scenario in the `api-client` delta; verify `python3 -m unittest tests.test_api_authenticate` passes
+- [x] 2.1 Add `RECAPTCHA_DOMAIN = "https://www.perfectdraft.com"` to `const.py`; drop `RECAPTCHA_ACTION_SIGN_IN` from `api.py` in favour of `const.RECAPTCHA_ACTION`, and move `COGNITO_IDP_URL` alongside if it reads better; verify `rg RECAPTCHA_ACTION_SIGN_IN` finds nothing
+- [x] 2.2 Give `AuthenticationError` optional `code` and `reason`, a `kind` property (`credentials` / `token` / `other`, per the design table) and a never-empty `display_reason` (trailing period stripped, at most 200 chars); existing single-argument raises still work
+- [x] 2.3 Rewrite `authenticate()` as Cognito `InitiateAuth` `USER_PASSWORD_AUTH` with `ClientMetadata {recaptchaToken, recaptchaAction, domain}`; parse with `content_type=None`; read tokens from `AuthenticationResult`; raise `AuthenticationError` (code = `ChallengeName`) when the result is missing or incomplete; parse `__type` / `message` from rejection bodies, tolerating namespaced types and non-JSON bodies; log no secrets
+- [x] 2.4 Add `tests/test_api_authenticate.py` (stdlib-only, loads `api.py` without Home Assistant, fake session) covering every scenario in the `api-client` delta; verify `python3 -m unittest tests.test_api_authenticate` passes
 
 ## 3. Config flow errors
 
@@ -18,11 +18,11 @@
 
 ## 4. README
 
-- [ ] 4.1 Change the step 2 snippet to `copy(t)` plus a "Token copied to clipboard" log line; reword steps 4–5 to "paste it"; add one sentence to run it once at the console prompt (not as a Live expression) and a fallback line using `console.log(t)`; verify the snippet runs in a browser console on the en-gb login page and the clipboard holds a ~2,600-char token
+- [ ] 4.1 Change the step 2 snippet to copy the token (via a `copy` reference captured before the promise, since Chromium removes `copy` once the command returns) plus a "Token copied to clipboard" log line; reword steps 4–5 to "paste it"; add one sentence to run it once at the console prompt (not as a Live expression) and a fallback line using `console.log(t)`; verify the snippet runs in a browser console on the en-gb login page and the clipboard holds a ~2,600-char token
 
 ## 5. On-device verification and version
 
-- [ ] 5.1 Bump `manifest.json` to 0.3.5 (shared with `add-keg-48180`, which must not bump it again)
+- [x] 5.1 Bump `manifest.json` to 0.3.5 (shared with `add-keg-48180`, which must not bump it again)
 - [ ] 5.2 Install the branch build on Home Assistant and add the integration from scratch with a fresh README token; confirm the entry is created and sensors populate
 - [ ] 5.3 With a deliberately wrong password, confirm the flow returns to the credentials form showing `invalid_credentials` and Cognito's reason; with a stale (>2 min) token, confirm `token_rejected` on the token form
 - [ ] 5.4 Trigger a reauth on the existing entry and confirm it succeeds; if a keg is fitted, also confirm Keg Freshness keeps its countdown and clear that TODO in `PROJECT_HYGIENE.md`
