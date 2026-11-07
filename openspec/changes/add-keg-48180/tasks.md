@@ -1,7 +1,8 @@
 ## 1. Name and worktrees
 
-- [ ] 1.1 Ask MThomas564 on PR #10 whether the keg or the PerfectDraft app calls 48180 "Camden Stout" or "Camden Nitro Stout"; record the answer (or "no reply by release, shipping Camden Stout") in this file
-  - Asked 2026-11-07: https://github.com/Falkvinge/hassio-integration-perfectdraft-pro/pull/10#issuecomment-6706008826 — awaiting reply; implementation proceeds with "Camden Stout"
+- [x] 1.1 Ask MThomas564 on PR #10 whether the keg or the PerfectDraft app calls 48180 "Camden Stout" or "Camden Nitro Stout"; record the answer (or "no reply by release, shipping Camden Stout") in this file
+  - Asked 2026-11-07: https://github.com/Falkvinge/hassio-integration-perfectdraft-pro/pull/10#issuecomment-6706008826 
+  - Answer 2026-11-07 11:13 UTC: the PerfectDraft app shows "Camden Stout" (the store lists "Camden Nitro Stout"); the catalog follows the app, so "Camden Stout" stands
 - [x] 1.2 `scripts/agent-worktree.sh create add-keg-48180` in the integration repo, and an equivalent `.worktree/add-keg-48180` on branch `agent/add-keg-48180` in `Hassio-PerfectDraftPro-Component`; confirm `.agent-lock` in both
 
 ## 2. Integration catalog
