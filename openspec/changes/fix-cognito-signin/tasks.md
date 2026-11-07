@@ -18,7 +18,7 @@
 
 ## 4. README
 
-- [ ] 4.1 Keep step 2 to one command that logs the token and adds a "Click to copy" button using `navigator.clipboard.writeText` (DevTools `copy()` cannot copy an async result in Firefox or Chromium, and Chromium truncates `prompt()` defaults at 2,000 chars); test in Firefox and Chrome/Edge that the clipboard receives the full token; reword steps 4–5 to "paste it"; add one sentence to run it once at the console prompt (not as a Live expression) and a fallback line using `console.log(t)`; verify the snippet runs in a browser console on the en-gb login page and the clipboard holds a ~2,600-char token
+- [x] 4.1 Keep step 2 to one command that logs the token and adds a "Click THIS BLACK BOX to copy" button using `navigator.clipboard.writeText` (DevTools `copy()` cannot copy an async result in Firefox or Chromium, and Chromium truncates `prompt()` defaults at 2,000 chars); test in Firefox and Chrome/Edge that the clipboard receives the full token; reword steps 4–5 to "paste it"; add one sentence to run it once at the console prompt (not as a Live expression) and a fallback line using `console.log(t)`; verify the snippet runs in a browser console on the en-gb login page and the clipboard holds a ~2,600-char token
 
 ## 5. On-device verification and version
 
