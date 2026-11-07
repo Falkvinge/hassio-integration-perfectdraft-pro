@@ -304,8 +304,11 @@ async def test_add_integration_while_reauth_pending(hass: HomeAssistant) -> None
         )
         await hass.async_block_till_done()
 
+    # Core up to 2025.x aborts in async_set_unique_id; 2026.x no longer
+    # counts the parked reauth flow as in progress and reaches the
+    # duplicate guard instead. Both reasons are translated.
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "already_in_progress"
+    assert result["reason"] in ("already_in_progress", "already_configured")
 
 
 # --- User setup: must be unchanged by this fix ---
