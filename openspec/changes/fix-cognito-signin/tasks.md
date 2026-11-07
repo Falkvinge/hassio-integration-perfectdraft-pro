@@ -32,5 +32,5 @@
 
 - Release jointly with `add-keg-48180`: integration v0.3.5 and card v0.4.3, published together. Release notes credit cesa030 (root cause and fix in #11) and brettjenkins (fork that confirmed it).
 - After the release is live, comment on #11 with the release link and close it.
-- #12 and #13 were already closed as duplicates of #11 on 2026-11-07; post the release link there too.
+- #12 and #13 are closed as duplicates of #11 (each with a thank-you comment) ahead of the release; post the release link there too.
 - Archive per `AGENTS.md` (merge, push, sync `api-client` and `config-flow` specs, archive, remove worktree and branch).

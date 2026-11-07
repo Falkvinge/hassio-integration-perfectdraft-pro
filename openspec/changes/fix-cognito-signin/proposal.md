@@ -44,5 +44,5 @@ None.
 - `README.md`: the step 2 snippet and wording.
 - `manifest.json`: 0.3.5.
 - `tests/`: a new stdlib-only test module for `authenticate()`. `test_config_flow.py` gains tests for the three error paths.
-- External: issues #11, #12 and #13. #12 and #13 are already closed as duplicates of #11. #11 closes once the release ships. Credit goes to cesa030 for the root cause and fix, and to brettjenkins for the fork that confirmed it.
+- External: issues #11, #12 and #13. #12 and #13 are closed as duplicates of #11. #11 closes once the release ships. Credit goes to cesa030 for the root cause and fix, and to brettjenkins for the fork that confirmed it.
 - No config entry migration. Stored tokens have the same shape, so existing installs with a valid refresh token are unaffected.
