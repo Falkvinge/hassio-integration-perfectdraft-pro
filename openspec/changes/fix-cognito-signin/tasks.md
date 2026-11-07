@@ -18,7 +18,7 @@
 
 ## 4. README
 
-- [ ] 4.1 Change the step 2 snippet to copy the token (via a `copy` reference captured before the promise, since Chromium removes `copy` once the command returns) plus a "Token copied to clipboard" log line; reword steps 4–5 to "paste it"; add one sentence to run it once at the console prompt (not as a Live expression) and a fallback line using `console.log(t)`; verify the snippet runs in a browser console on the en-gb login page and the clipboard holds a ~2,600-char token
+- [ ] 4.1 Change step 2 to two commands — store the token in `window.pdToken` and print "Token ready. Now run: copy(pdToken)", then `copy(pdToken)` — because neither Chromium nor Firefox can `copy()` from an async callback; test in Firefox and Chrome/Edge; reword steps 4–5 to "paste it"; add one sentence to run it once at the console prompt (not as a Live expression) and a fallback line using `console.log(t)`; verify the snippet runs in a browser console on the en-gb login page and the clipboard holds a ~2,600-char token
 
 ## 5. On-device verification and version
 
