@@ -57,6 +57,24 @@ STORED_DATA = {
 }
 
 
+WRONG_PASSWORD = AuthenticationError(
+    "Sign-in rejected (400)",
+    code="NotAuthorizedException",
+    reason="Incorrect username or password.",
+)
+TOKEN_REJECTED_REASON = "PreAuthentication failed with error 'domain'"
+TOKEN_REJECTED = AuthenticationError(
+    "Sign-in rejected (400)",
+    code="UserLambdaValidationException",
+    reason=f"{TOKEN_REJECTED_REASON}.",
+)
+OTHER_FAILURE = AuthenticationError(
+    "Sign-in rejected (400)",
+    code="InvalidParameterException",
+    reason="USER_PASSWORD_AUTH flow not enabled for this client",
+)
+
+
 def _mock_client(*, authenticate_error=None, machines=((MACHINE_ID,))):
     """An API client that hands back recognisably new tokens."""
     client = AsyncMock()
@@ -182,14 +200,60 @@ async def test_reauth_accepts_same_account_different_case(
 
 async def test_reauth_bad_token_keeps_old_tokens(hass: HomeAssistant) -> None:
     entry = _entry(hass)
-    client = _mock_client(authenticate_error=AuthenticationError("token expired"))
+    client = _mock_client(authenticate_error=TOKEN_REJECTED)
     result = await _run_reauth(hass, entry, client)
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "token"
-    assert result["errors"] == {"base": "invalid_auth"}
+    assert result["errors"] == {"base": "token_rejected"}
+    assert result["description_placeholders"] == {"reason": TOKEN_REJECTED_REASON}
     assert entry.data[CONF_ACCESS_TOKEN] == "old-access"
     assert entry.data[CONF_REFRESH_TOKEN] == "old-refresh"
+
+
+async def test_reauth_wrong_password_returns_to_reauth_confirm(
+    hass: HomeAssistant,
+) -> None:
+    entry = _entry(hass)
+    client = _mock_client(authenticate_error=WRONG_PASSWORD)
+    result = await _run_reauth(hass, entry, client)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+    assert result["errors"] == {"base": "invalid_credentials"}
+    assert result["description_placeholders"] == {
+        "reason": "Incorrect username or password"
+    }
+    assert entry.data[CONF_ACCESS_TOKEN] == "old-access"
+
+    # Corrected credentials lead to a fresh token, then success.
+    client.authenticate.side_effect = None
+    with (
+        patch(CLIENT_PATH, return_value=client),
+        patch(SETUP_PATH, return_value=True),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD}
+        )
+        assert result["step_id"] == "token"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"recaptcha_token": TOKEN}
+        )
+        await hass.async_block_till_done()
+
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_ACCESS_TOKEN] == "new-access"
+
+
+async def test_reauth_other_failure_is_invalid_auth(hass: HomeAssistant) -> None:
+    entry = _entry(hass)
+    client = _mock_client(authenticate_error=AuthenticationError("token expired"))
+    result = await _run_reauth(hass, entry, client)
+
+    assert result["step_id"] == "token"
+    assert result["errors"] == {"base": "invalid_auth"}
+    assert result["description_placeholders"] == {"reason": "no reason given"}
+    assert entry.data[CONF_ACCESS_TOKEN] == "old-access"
 
 
 async def test_reauth_skips_profile_when_machine_id_known(
@@ -318,6 +382,53 @@ async def test_user_setup_connection_error(hass: HomeAssistant) -> None:
     assert result["errors"] == {"base": "cannot_connect"}
 
 
+async def _run_user_setup(hass, client):
+    """Drive user then token, returning the token step's result."""
+    with patch(CLIENT_PATH, return_value=client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_USER}
+        )
+        assert result["description_placeholders"] == {"reason": ""}
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD}
+        )
+        assert result["description_placeholders"] == {"reason": ""}
+        return await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"recaptcha_token": TOKEN}
+        )
+
+
+async def test_user_setup_wrong_password_returns_to_user_form(
+    hass: HomeAssistant,
+) -> None:
+    result = await _run_user_setup(hass, _mock_client(authenticate_error=WRONG_PASSWORD))
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] == {"base": "invalid_credentials"}
+    assert result["description_placeholders"] == {
+        "reason": "Incorrect username or password"
+    }
+
+
+async def test_user_setup_token_rejected(hass: HomeAssistant) -> None:
+    result = await _run_user_setup(hass, _mock_client(authenticate_error=TOKEN_REJECTED))
+
+    assert result["step_id"] == "token"
+    assert result["errors"] == {"base": "token_rejected"}
+    assert result["description_placeholders"] == {"reason": TOKEN_REJECTED_REASON}
+
+
+async def test_user_setup_other_auth_failure(hass: HomeAssistant) -> None:
+    result = await _run_user_setup(hass, _mock_client(authenticate_error=OTHER_FAILURE))
+
+    assert result["step_id"] == "token"
+    assert result["errors"] == {"base": "invalid_auth"}
+    assert result["description_placeholders"] == {
+        "reason": "USER_PASSWORD_AUTH flow not enabled for this client"
+    }
+
+
 # --- Translations must cover every reachable abort reason ---
 
 COMPONENT_DIR = Path(__file__).parent.parent / "custom_components" / "perfectdraft"
@@ -383,3 +494,51 @@ def test_every_abort_reason_is_translated(filename: str) -> None:
     )["config"]["abort"]
     missing = sorted(_abort_reasons_in_source() - set(declared))
     assert not missing, f"{filename} is missing abort reasons: {missing}"
+
+
+# --- ...and every error key the forms can show ---
+
+
+def _error_keys_in_source() -> set[str]:
+    """String constants assigned to ``errors["base"]`` or listed in ``_AUTH_ERRORS``."""
+    tree = ast.parse((COMPONENT_DIR / "config_flow.py").read_text(encoding="utf-8"))
+    keys: set[str] = set()
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        target = node.targets[0]
+        if (
+            isinstance(target, ast.Subscript)
+            and isinstance(target.slice, ast.Constant)
+            and target.slice.value == "base"
+            and isinstance(node.value, ast.Constant)
+        ):
+            keys.add(node.value.value)
+        if (
+            isinstance(target, ast.Name)
+            and target.id == "_AUTH_ERRORS"
+            and isinstance(node.value, ast.Dict)
+        ):
+            keys.update(v.value for v in node.value.values if isinstance(v, ast.Constant))
+
+    return keys
+
+
+def test_error_key_scanner_sees_the_known_keys() -> None:
+    assert {
+        "cannot_connect",
+        "unknown",
+        "invalid_auth",
+        "invalid_credentials",
+        "token_rejected",
+    } <= _error_keys_in_source()
+
+
+@pytest.mark.parametrize("filename", ["strings.json", "translations/en.json"])
+def test_every_error_key_is_translated(filename: str) -> None:
+    declared = json.loads(
+        (COMPONENT_DIR / filename).read_text(encoding="utf-8")
+    )["config"]["error"]
+    missing = sorted(_error_keys_in_source() - set(declared))
+    assert not missing, f"{filename} is missing error keys: {missing}"

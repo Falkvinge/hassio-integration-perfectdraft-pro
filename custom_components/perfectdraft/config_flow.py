@@ -31,6 +31,12 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_RECAPTCHA_TOKEN = "recaptcha_token"
 
+_AUTH_ERRORS = {
+    "credentials": "invalid_credentials",
+    "token": "token_rejected",
+    "other": "invalid_auth",
+}
+
 
 class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for PerfectDraft."""
@@ -40,18 +46,23 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._email: str | None = None
         self._password: str | None = None
+        # Fills {reason} in the error strings; every form must pass it.
+        self._auth_reason = ""
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Step 1: collect email and password."""
-        errors: dict[str, str] = {}
-
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
             return await self.async_step_token()
 
+        return self._show_user_form({})
+
+    def _show_user_form(
+        self, errors: dict[str, str]
+    ) -> config_entries.ConfigFlowResult:
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
@@ -61,6 +72,7 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={"reason": self._auth_reason},
         )
 
     async def async_step_token(
@@ -81,7 +93,15 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             except AuthenticationError as err:
                 _LOGGER.error("Authentication failed: %s", err)
-                errors["base"] = "invalid_auth"
+                self._auth_reason = err.display_reason
+                error = _AUTH_ERRORS[err.kind]
+                if error == "invalid_credentials":
+                    # A fresh token cannot fix a wrong password, so ask for
+                    # the credentials again instead of looping on this step.
+                    if self.source == config_entries.SOURCE_REAUTH:
+                        return self._show_reauth_confirm_form({"base": error})
+                    return self._show_user_form({"base": error})
+                errors["base"] = error
             except PerfectDraftConnectionError as err:
                 _LOGGER.error("Connection failed: %s", err)
                 errors["base"] = "cannot_connect"
@@ -120,6 +140,7 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={"reason": self._auth_reason},
         )
 
     async def _async_persist(
@@ -168,13 +189,16 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Ask user to re-enter credentials for reauth."""
-        errors: dict[str, str] = {}
-
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
             return await self.async_step_token()
 
+        return self._show_reauth_confirm_form({})
+
+    def _show_reauth_confirm_form(
+        self, errors: dict[str, str]
+    ) -> config_entries.ConfigFlowResult:
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=vol.Schema(
@@ -184,6 +208,7 @@ class PerfectDraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={"reason": self._auth_reason},
         )
 
     @staticmethod

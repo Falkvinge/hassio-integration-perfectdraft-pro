@@ -7,7 +7,14 @@ from typing import Any
 
 import aiohttp
 
-from .const import API_BASE_URL, API_KEY, COGNITO_CLIENT_ID, COGNITO_REGION
+from .const import (
+    API_BASE_URL,
+    API_KEY,
+    COGNITO_CLIENT_ID,
+    COGNITO_REGION,
+    RECAPTCHA_ACTION,
+    RECAPTCHA_DOMAIN,
+)
 from .exceptions import (
     AuthenticationError,
     PerfectDraftApiError,
@@ -16,8 +23,33 @@ from .exceptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
-RECAPTCHA_ACTION_SIGN_IN = "Magento/login"
 COGNITO_IDP_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/"
+COGNITO_HEADERS = {
+    "Content-Type": "application/x-amz-json-1.1",
+    "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+}
+
+
+def _parse_cognito_error(body: str) -> tuple[str | None, str | None]:
+    """Return (error type, message) from a Cognito error body.
+
+    Cognito answers ``{"__type": "...", "message": "..."}``, sometimes with a
+    namespaced type (``com.amazonaws...#NotAuthorizedException``). A body that
+    is not JSON, such as an HTML error page, becomes the message, truncated.
+    """
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return None, body.strip()[:200] or None
+    if not isinstance(data, dict):
+        return None, None
+    code = data.get("__type")
+    reason = data.get("message")
+    if isinstance(code, str):
+        code = code.rsplit("#", 1)[-1]
+    else:
+        code = None
+    return code, reason if isinstance(reason, str) else None
 
 
 class PerfectDraftApiClient:
@@ -59,42 +91,61 @@ class PerfectDraftApiClient:
     async def authenticate(
         self, email: str, password: str, recaptcha_token: str
     ) -> dict[str, str]:
-        """Sign in via /authentication/sign-in with a reCAPTCHA token.
+        """Sign in directly against Cognito with a reCAPTCHA token.
 
         The token must be generated from a real browser on perfectdraft.com
         using the web reCAPTCHA Enterprise key with action Magento/login.
+        PerfectDraft's PreAuthentication Lambda also requires the shop's
+        origin as ``domain``; the api.perfectdraft.com sign-in gateway does
+        not forward it, so sign-in cannot go through the gateway.
         """
-        url = f"{self._base}/authentication/sign-in"
         payload = {
-            "email": email,
-            "password": password,
-            "recaptchaToken": recaptcha_token,
-            "recaptchaAction": RECAPTCHA_ACTION_SIGN_IN,
+            "AuthFlow": "USER_PASSWORD_AUTH",
+            "ClientId": COGNITO_CLIENT_ID,
+            "AuthParameters": {"USERNAME": email, "PASSWORD": password},
+            "ClientMetadata": {
+                "recaptchaToken": recaptcha_token,
+                "recaptchaAction": RECAPTCHA_ACTION,
+                "domain": RECAPTCHA_DOMAIN,
+            },
         }
-        headers = {"x-api-key": API_KEY}
 
         try:
             async with self._session.post(
-                url, json=payload, headers=headers
+                COGNITO_IDP_URL, json=payload, headers=COGNITO_HEADERS
             ) as resp:
                 if resp.status in (400, 401, 403):
                     body = await resp.text()
+                    code, reason = _parse_cognito_error(body)
                     raise AuthenticationError(
-                        f"Sign-in rejected ({resp.status}): {body}"
+                        f"Sign-in rejected ({resp.status}): {body}",
+                        code=code,
+                        reason=reason,
                     )
                 if resp.status != 200:
                     body = await resp.text()
                     raise PerfectDraftApiError(resp.status, body)
-                data = await resp.json()
+                data = await resp.json(content_type=None)
         except aiohttp.ClientError as exc:
             raise PerfectDraftConnectionError(str(exc)) from exc
 
-        self._access_token = data["AccessToken"]
-        self._id_token = data["IdToken"]
-        self._refresh_token = data["RefreshToken"]
+        result = data.get("AuthenticationResult") if isinstance(data, dict) else None
+        if not isinstance(result, dict) or not all(
+            result.get(key) for key in ("AccessToken", "IdToken", "RefreshToken")
+        ):
+            challenge = data.get("ChallengeName") if isinstance(data, dict) else None
+            raise AuthenticationError(
+                f"Sign-in returned no tokens (challenge: {challenge})",
+                code=challenge,
+                reason=f"Sign-in requires {challenge}" if challenge else None,
+            )
+
+        self._access_token = result["AccessToken"]
+        self._id_token = result["IdToken"]
+        self._refresh_token = result["RefreshToken"]
 
         _LOGGER.debug("Authenticated successfully")
-        return data
+        return result
 
     async def refresh_access_token(self) -> dict[str, Any]:
         """Refresh tokens directly via AWS Cognito (bypasses API gateway + reCAPTCHA)."""
