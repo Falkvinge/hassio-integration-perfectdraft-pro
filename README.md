@@ -48,14 +48,14 @@ The integration needs a one-time verification token from PerfectDraft's website.
 3. Paste this command at the console prompt and press **Enter** — once, not as a "Live expression", which re-runs it over and over:
 
 ```javascript
-grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => { console.log(t); prompt('PerfectDraft verification token. Press Ctrl+C (Cmd+C on a Mac) to copy it, then OK.', t) })
+grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => { console.log(t); const b = document.body.appendChild(document.createElement('button')); b.textContent = 'Click to copy your PerfectDraft token'; b.style = 'position:fixed;top:40%;left:50%;transform:translateX(-50%);z-index:2147483647;padding:20px 40px;font-size:22px;background:#000;color:#fff;border-radius:8px;cursor:pointer'; b.onclick = () => navigator.clipboard.writeText(t).then(() => b.textContent = 'Copied! Paste it into Home Assistant', e => b.textContent = 'Copy failed: ' + e.message) })
 ```
 
-4. A dialog opens with the token already selected — press **Ctrl+C** (**Cmd+C** on a Mac), then **OK**
+4. A black **Click to copy your PerfectDraft token** button appears in the middle of the page — click it, and it changes to **Copied!**
 5. Paste the token into the Home Assistant setup dialog
 6. Click **Submit** within 2 minutes (the token expires)
 
-If no dialog appears, the same token is printed in the console: right-click it and choose **Copy** (or select it and copy).
+If the button says **Copy failed**, the same token is printed in the console: right-click it there and copy it.
 
 That's it! The integration will authenticate and start polling your PerfectDraft Pro. Token refresh is automatic — you should not need to repeat this step. If the session does eventually expire, Home Assistant will prompt you to re-authenticate. (This is a new integration, so the exact session lifespan is still being determined — it's at least 30 days and may well be indefinite.)
 
