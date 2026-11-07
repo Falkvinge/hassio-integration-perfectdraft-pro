@@ -22,12 +22,12 @@
 
 ## 5. On-device verification and version
 
-- [x] 5.1 Bump `manifest.json` to 0.3.5 (shared with `add-keg-48180`, which must not bump it again)
+- [x] 5.1 Bump `manifest.json` to 0.4.4 (shared with `add-keg-48180`, which must not bump it again)
 - [x] 5.5 Run the full suite (`.venv-test/bin/pytest tests/` and `python3 -m unittest discover -s tests`) and confirm green
 
 ## Deferred: shipping without on-device checks
 
-Maintainer decision, 2026-11-07: ship v0.3.5 without these on-device checks (no time for a Home Assistant reinstall). Coverage at release is the automated suite plus the README token verified in Firefox and Chromium; sign-in against the live service is untested. Run them after release; the open TODO is in `PROJECT_HYGIENE.md`.
+Maintainer decision, 2026-11-07: ship v0.4.4 without these on-device checks (no time for a Home Assistant reinstall). Coverage at release is the automated suite plus the README token verified in Firefox and Chromium; sign-in against the live service is untested. Run them after release; the open TODO is in `PROJECT_HYGIENE.md`.
 
 - 5.2 Install the branch build on Home Assistant and add the integration from scratch with a fresh README token; confirm the entry is created and sensors populate
 - 5.3 With a deliberately wrong password, confirm the flow returns to the credentials form showing `invalid_credentials` and Cognito's reason; with a stale (>2 min) token, confirm `token_rejected` on the token form
@@ -35,7 +35,7 @@ Maintainer decision, 2026-11-07: ship v0.3.5 without these on-device checks (no 
 
 ## Workflow follow-up
 
-- Release jointly with `add-keg-48180`: integration v0.3.5 and card v0.4.3, published together. Release notes credit cesa030 (root cause and fix in #11) and brettjenkins (fork that confirmed it).
+- Release jointly with `add-keg-48180`: integration v0.4.4 and card v0.4.4, published together. Release notes credit cesa030 (root cause and fix in #11) and brettjenkins (fork that confirmed it).
 - After the release is live, comment on #11 with the release link and close it.
 - #12 and #13 are closed as duplicates of #11 (each with a thank-you comment) ahead of the release; post the release link there too.
 - Archive per `AGENTS.md` (merge, push, sync `api-client` and `config-flow` specs, archive, remove worktree and branch).

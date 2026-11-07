@@ -15,7 +15,7 @@ The config flow made this hard to diagnose. Every authentication failure shows t
   - Anything else stays on the token form with `invalid_auth`.
   - All three show the server's reason.
 - README step 2: the console snippet copies the token to the clipboard and prints a short confirmation. The user no longer has to select a 2,600-character string by hand. A note says to run it once at the console prompt.
-- Integration version 0.3.5. It ships in one joint release with `add-keg-48180` and the companion card release.
+- Integration version 0.4.4, synced with the companion card (both 0.4.4; major.minor in lockstep from here). It ships in one joint release with `add-keg-48180` and the companion card release.
 
 Not in scope:
 
@@ -42,7 +42,7 @@ None.
 - `custom_components/perfectdraft/config_flow.py`: error mapping in `async_step_token`, and a return to the credentials form.
 - `custom_components/perfectdraft/strings.json`, `translations/en.json`: two new error keys. `invalid_auth` is reworded to include `{reason}`.
 - `README.md`: the step 2 snippet and wording.
-- `manifest.json`: 0.3.5.
+- `manifest.json`: 0.4.4.
 - `tests/`: a new stdlib-only test module for `authenticate()`. `test_config_flow.py` gains tests for the three error paths.
 - External: issues #11, #12 and #13. #12 and #13 are closed as duplicates of #11. #11 closes once the release ships. Credit goes to cesa030 for the root cause and fix, and to brettjenkins for the fork that confirmed it.
 - No config entry migration. Stored tokens have the same shape, so existing installs with a valid refresh token are unaffected.

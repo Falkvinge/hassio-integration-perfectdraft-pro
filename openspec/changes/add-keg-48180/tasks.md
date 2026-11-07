@@ -19,7 +19,7 @@ Work in `Hassio-PerfectDraftPro-Component`.
 - [x] 3.2 Add the `camden-stout` entry (name from 1.1, Camden Town Brewery, Stout, PR #2 colours, `imagePath: kegImage("camden-stout")`, `kegId: "48180"`) next to the other Camden rows; check the ABV against Camden's or PerfectDraft's product page and use that value
   - ABV 4.0% confirmed on Camden Town Brewery's "Camden X PerfectDraft Stout" listing (camdentownbrewery.com, 2026-11-07), which also calls the keg "Camden Stout"
 - [x] 3.3 Re-sync `scripts/keg-catalog.reference.json` from the integration commit in 2.4 and set `_upstreamCommit` to it
-- [x] 3.4 Bump `package.json`, `CARD_VERSION` and `EDITOR_VERSION` to 0.4.3; regenerate `package-lock.json` with `npm install --package-lock-only` rather than copying PR #2's
+- [x] 3.4 Bump `package.json`, `CARD_VERSION` and `EDITOR_VERSION` to 0.4.4; regenerate `package-lock.json` with `npm install --package-lock-only` rather than copying PR #2's
 - [x] 3.5 `npm run lint`, `npm run check:catalog` (117/117), `npm run build`; commit source and `dist/` with `Co-authored-by: MThomas564`
 
 ## 4. Joint verification
@@ -27,13 +27,13 @@ Work in `Hassio-PerfectDraftPro-Component`.
 
 ## Deferred: shipping without on-device checks
 
-Maintainer decision, 2026-11-07: ship card 0.4.3 and the 48180 catalog entry without this check (no time for a Home Assistant reinstall), as with `fix-cognito-signin` 5.2–5.4. Coverage at release: catalog unit tests (117 keys, ordering), `npm run lint`, `npm run check:catalog` (117/117) and a clean `npm run build` with the artwork in `dist/`. The open TODO is in `PROJECT_HYGIENE.md`.
+Maintainer decision, 2026-11-07: ship card 0.4.4 and the 48180 catalog entry without this check (no time for a Home Assistant reinstall), as with `fix-cognito-signin` 5.2–5.4. Coverage at release: catalog unit tests (117 keys, ordering), `npm run lint`, `npm run check:catalog` (117/117) and a clean `npm run build` with the artwork in `dist/`. The open TODO is in `PROJECT_HYGIENE.md`.
 
-- 4.1 With `fix-cognito-signin` also applied, install integration 0.3.5 and card 0.4.3 on Home Assistant; if a 48180 keg is unavailable, confirm instead that the card editor's beer picker lists the new entry with its artwork, and that `getBeerByKegId("48180")` resolves it in a browser console on the dashboard
+- 4.1 With `fix-cognito-signin` also applied, install integration 0.4.4 and card 0.4.4 on Home Assistant; if a 48180 keg is unavailable, confirm instead that the card editor's beer picker lists the new entry with its artwork, and that `getBeerByKegId("48180")` resolves it in a browser console on the dashboard
 
 ## Workflow follow-up
 
 - Before archiving this change, archive `add-keg-47792` (complete since v0.3.4, never archived), so the `entities` main spec reads 116 before this delta lifts it to 117.
-- Joint release: integration v0.3.5 (with `fix-cognito-signin`) and card v0.4.3, published together. The release notes thank MThomas564 and tell users to update both.
+- Joint release: integration v0.4.4 (with `fix-cognito-signin`) and card v0.4.4, published together. The release notes thank MThomas564 and tell users to update both.
 - After the release, close PR #10, card PR #2 and issue #9, each with a thank-you, the commit links and the release link.
 - Archive per `AGENTS.md` in both repos (merge, push, sync the `entities` spec, archive, remove worktrees and branches).

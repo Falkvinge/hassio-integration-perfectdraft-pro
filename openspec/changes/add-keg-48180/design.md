@@ -35,8 +35,8 @@ He has the keg fitted, which is the bar the catalog sets. The fork's "Nitro" may
 **Card entry: take PR #2's artwork and fields, and verify the ABV.**
 We use slug `camden-stout`, brewery "Camden Town Brewery", style "Stout", colours as in PR #2, `imagePath: kegImage("camden-stout")`, and `kegId: "48180"`. The ABV of 4.0 is checked against Camden's or PerfectDraft's product page before landing. The card displays it, and a stout at exactly the session-pale ABV is worth a second look. The artwork file comes from PR #2's head commit unchanged. `dist/` is rebuilt with our `npm run build`, not taken from the PR.
 
-**Versions: no separate integration bump; card 0.4.3.**
-`fix-cognito-signin` owns the integration's 0.3.5 bump. The card bumps 0.4.2 → 0.4.3 in `package.json`, `CARD_VERSION` and `EDITOR_VERSION`. PR #2's `package-lock.json` jump from 0.3.1 is a stale lockfile, so we regenerate the lockfile rather than copy it.
+**Versions: both packages ship as 0.4.4; no separate integration bump here.**
+On 2026-11-07 the maintainer synced the two version lines: the integration jumps 0.3.4 → 0.4.4 (owned by `fix-cognito-signin`) and the card 0.4.2 → 0.4.4. From here major.minor moves in lockstep and the patch number may diverge for a fix to only one package (for example card 0.4.5 alongside integration 0.4.4). Letter suffixes such as `0.4.4b` are not used: PEP 440 (HACS) and SemVer (npm) both read them as pre-releases that sort before 0.4.4. The card bumps in `package.json`, `CARD_VERSION` and `EDITOR_VERSION`. PR #2's `package-lock.json` jump from 0.3.1 is a stale lockfile, so we regenerate the lockfile rather than copy it.
 
 ## Risks / Trade-offs
 
