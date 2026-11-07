@@ -24,9 +24,11 @@ Work in `Hassio-PerfectDraftPro-Component`.
 - [x] 3.5 `npm run lint`, `npm run check:catalog` (117/117, snapshot at the 2.3 commit) and `npm run build`; verify both `.webp` files are in `dist/kegs/`, then commit source and `dist/`
   - Lint clean; `check:catalog` 117/117 @ `1598e7b0`; build copies both files to `dist/kegs/`; bundle has both `imagePath`s and no `0.4.4`. Card commit `a79173a`
 
-## 4. Joint verification
+## Deferred: shipping without on-device checks
 
-- [ ] 4.1 Install integration 0.4.5 and card 0.4.5 on Home Assistant; confirm the card editor's beer picker shows artwork for both Oktoberfest entries and that each renders sharply in the `hero` layout; with a 29745 or 33918 keg unavailable, also confirm `getBeerByKegId("29745")` and `getBeerByKegId("33918")` return entries with an `imagePath` in a browser console on the dashboard
+Maintainer decision, 2026-11-07: ship integration and card 0.4.5 without this check, as with 0.4.4 (no Home Assistant on the dev host). Coverage at release: catalog unit tests (117 keys, the new 29745 name), `npm run lint`, `npm run check:catalog` (117/117), a clean `npm run build` with both images in `dist/kegs/`, and a visual check of both encoded images. The open TODO is in `PROJECT_HYGIENE.md`.
+
+- 4.1 Install integration 0.4.5 and card 0.4.5 on Home Assistant; confirm the card editor's beer picker shows artwork for both Oktoberfest entries and that each renders sharply in the `hero` layout; with a 29745 or 33918 keg unavailable, also confirm `getBeerByKegId("29745")` and `getBeerByKegId("33918")` return entries with an `imagePath` in a browser console on the dashboard
 
 ## Workflow follow-up
 
