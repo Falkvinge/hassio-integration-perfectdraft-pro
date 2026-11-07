@@ -9,7 +9,7 @@ The config flow SHALL present a form requesting the user's PerfectDraft account 
 - **THEN** submitting SHALL advance to the token step
 
 ### Requirement: Token step collects verification token
-The config flow SHALL present a form requesting a reCAPTCHA verification token as the second step, with instructions linking to the README.
+The config flow SHALL present a form requesting a reCAPTCHA verification token as the second step, with instructions linking to the README. When authentication fails, the flow SHALL tell the user which input was rejected and show the server's reason.
 
 #### Scenario: Token step display
 - **WHEN** the user reaches the token step
@@ -24,8 +24,24 @@ The config flow SHALL present a form requesting a reCAPTCHA verification token a
 - **THEN** it SHALL create a config entry storing email, access token, ID token, refresh token, and machine ID
 
 #### Scenario: Invalid or expired token
-- **WHEN** authentication fails
-- **THEN** the flow SHALL show an error and allow the user to retry with a fresh token
+- **WHEN** authentication fails as a verification token failure
+- **THEN** the flow SHALL show the token form again with the `token_rejected` error, including the server's reason
+- **THEN** the user SHALL be able to retry with a fresh token
+
+#### Scenario: Wrong email or password
+- **WHEN** authentication fails as a credentials failure
+- **THEN** the flow SHALL show the credentials form again with the `invalid_credentials` error, including the server's reason
+- **THEN** that form SHALL be the email and password form during setup, and the `reauth_confirm` form during reauth
+- **THEN** after the user resubmits credentials, the flow SHALL ask for a fresh token
+
+#### Scenario: Other authentication failure
+- **WHEN** authentication fails for any other reason
+- **THEN** the flow SHALL show the token form again with the `invalid_auth` error, including the server's reason
+- **THEN** the user SHALL be able to retry with a fresh token
+
+#### Scenario: Failure without a server reason
+- **WHEN** authentication fails and the server supplied no reason
+- **THEN** the error message SHALL still render, with a fixed fallback in place of the reason and no unfilled placeholder
 
 #### Scenario: API unreachable
 - **WHEN** the API is unreachable
@@ -78,8 +94,8 @@ The integration SHALL support Home Assistant's reauth mechanism when the refresh
 - **THEN** the flow SHALL treat it as the same account and complete successfully
 
 #### Scenario: Reauth authentication fails
-- **WHEN** the verification token is expired or the credentials are wrong during reauth
-- **THEN** the flow SHALL show the `invalid_auth` error on the token form and allow retry with a fresh token
+- **WHEN** the verification token or the credentials are rejected during reauth
+- **THEN** the flow SHALL show the same error, on the same form, as the matching failure during setup (`token_rejected`, `invalid_credentials` on the `reauth_confirm` form, or `invalid_auth`)
 - **THEN** the existing config entry's tokens SHALL be left unchanged
 
 #### Scenario: Machine ID lookup is skipped when already known
