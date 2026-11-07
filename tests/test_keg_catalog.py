@@ -23,7 +23,7 @@ CATALOG_PATH = os.path.join(
 
 # Floor ratchets when the catalog grows. A drop below this means entries were
 # lost; the catalog is only ever meant to grow.
-MINIMUM_ENTRIES = 116
+MINIMUM_ENTRIES = 117
 
 # Shop-listing artefacts that are not part of a beer's name.
 LISTING_ARTEFACTS = ("6L", "Short Date", "BBE")
@@ -106,6 +106,7 @@ class TestKegCatalogContent(unittest.TestCase):
         self.assertEqual(catalog["44536"], "Tiny Rebel Stay Puft")
         self.assertEqual(catalog["48050"], "Anheuser-Busch Bud")
         self.assertEqual(catalog["47792"], "Camden Eazy")
+        self.assertEqual(catalog["48180"], "Camden Stout")
 
 
 if __name__ == "__main__":
