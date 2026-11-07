@@ -1,0 +1,70 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Compte PerfectDraft",
+        "description": "Entrez vos identifiants de l'application PerfectDraft.",
+        "data": {
+          "email": "Adresse e-mail",
+          "password": "Mot de passe"
+        }
+      },
+      "token": {
+        "title": "Jeton de vérification",
+        "description": "Collez le jeton de vérification depuis le site PerfectDraft. Consultez les [instructions d'installation](https://github.com/Falkvinge/hassio-integration-perfectdraft-pro#step-2-verification-token) pour le guide pas à pas de 30 secondes. Le jeton expire en 2 minutes, générez-le juste avant de le coller.",
+        "data": {
+          "recaptcha_token": "Jeton de vérification"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Réauthentification PerfectDraft",
+        "description": "Votre session a expiré. Veuillez saisir à nouveau vos identifiants.",
+        "data": {
+          "email": "Adresse e-mail",
+          "password": "Mot de passe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Échec de l'authentification : {reason}. Réessayez avec un nouveau jeton.",
+      "invalid_credentials": "PerfectDraft a rejeté l'adresse e-mail ou le mot de passe : {reason}.",
+      "token_rejected": "PerfectDraft a rejeté le jeton de vérification : {reason}. Générez un nouveau jeton et collez-le sous 2 minutes.",
+      "cannot_connect": "Impossible de se connecter au service PerfectDraft.",
+      "unknown": "Une erreur inattendue s'est produite."
+    },
+    "abort": {
+      "already_configured": "Ce compte PerfectDraft est déjà configuré.",
+      "reauth_successful": "Réauthentification réussie.",
+      "reauth_account_mismatch": "Ces identifiants correspondent à un autre compte PerfectDraft. Réauthentifiez-vous avec le compte initial de cette intégration, ou supprimez l'intégration et ajoutez l'autre compte séparément.",
+      "already_in_progress": "La configuration pour ce compte PerfectDraft est déjà en cours. Terminez ou annulez la configuration en attente dans Paramètres > Appareils et services."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": { "name": "Température" },
+      "keg_remaining": { "name": "Niveau du fût" },
+      "keg_product_id": { "name": "ID du fût" },
+      "keg_name": { "name": "Fût" },
+      "connection": { "name": "Connexion" },
+      "door": { "name": "Porte" },
+      "pours": { "name": "Tirages" },
+      "last_pour": { "name": "Dernier tirage" },
+      "firmware": { "name": "Firmware" },
+      "mode": { "name": "Mode" },
+      "keg_freshness": { "name": "Fraîcheur du fût" }
+    },
+    "button": {
+      "mark_keg_changed": { "name": "Marquer le fût changé" }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options PerfectDraft",
+        "data": {
+          "scan_interval": "Intervalle d'actualisation (secondes)"
+        }
+      }
+    }
+  }
+}
