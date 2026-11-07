@@ -11,10 +11,10 @@
 
 ## 3. Config flow errors
 
-- [ ] 3.1 In `async_step_token`, map `err.kind` to `token_rejected` / `invalid_credentials` / `invalid_auth`; on `invalid_credentials` re-show the `user` form (setup) or `reauth_confirm` form (reauth) with the error instead of the token form
-- [ ] 3.2 Pass `description_placeholders={"reason": ...}` on every `async_show_form` for `user`, `reauth_confirm` and `token` (empty string when there is no error)
+- [x] 3.1 In `async_step_token`, map `err.kind` to `token_rejected` / `invalid_credentials` / `invalid_auth`; on `invalid_credentials` re-show the `user` form (setup) or `reauth_confirm` form (reauth) with the error instead of the token form
+- [x] 3.2 Pass `description_placeholders={"reason": ...}` on every `async_show_form` for `user`, `reauth_confirm` and `token` (empty string when there is no error)
 - [x] 3.3 In `strings.json` and `translations/en.json`, reword `invalid_auth` to include `{reason}` and add `invalid_credentials` and `token_rejected`; verify the two files stay identical (`diff`)
-- [ ] 3.4 Extend `tests/test_config_flow.py`: one test per error key (setup and reauth), asserting the form step, the error key and the `reason` placeholder; update `test_reauth_bad_token_keeps_old_tokens` for the new key; add a check that every `errors["base"]` value in `config_flow.py` exists in both translation files; verify `.venv-test/bin/pytest tests/` passes
+- [x] 3.4 Extend `tests/test_config_flow.py`: one test per error key (setup and reauth), asserting the form step, the error key and the `reason` placeholder; update `test_reauth_bad_token_keeps_old_tokens` for the new key; add a check that every `errors["base"]` value in `config_flow.py` exists in both translation files; verify `.venv-test/bin/pytest tests/` passes (harness bumped to 0.13.375 / core 2026.10.4, see branch commit)
 
 ## 4. README
 
@@ -26,7 +26,7 @@
 - [ ] 5.2 Install the branch build on Home Assistant and add the integration from scratch with a fresh README token; confirm the entry is created and sensors populate
 - [ ] 5.3 With a deliberately wrong password, confirm the flow returns to the credentials form showing `invalid_credentials` and Cognito's reason; with a stale (>2 min) token, confirm `token_rejected` on the token form
 - [ ] 5.4 Trigger a reauth on the existing entry and confirm it succeeds; if a keg is fitted, also confirm Keg Freshness keeps its countdown and clear that TODO in `PROJECT_HYGIENE.md`
-- [ ] 5.5 Run the full suite (`.venv-test/bin/pytest tests/` and `python3 -m unittest discover -s tests`) and confirm green
+- [x] 5.5 Run the full suite (`.venv-test/bin/pytest tests/` and `python3 -m unittest discover -s tests`) and confirm green
 
 ## Workflow follow-up
 
