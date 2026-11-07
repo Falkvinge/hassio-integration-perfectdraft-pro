@@ -1,16 +1,19 @@
 ## 1. Worktree and contribution
 
-- [ ] 1.1 `scripts/agent-worktree.sh create add-french-translation`; verify `.worktree/add-french-translation/.agent-lock` exists and `git worktree list` shows branch `agent/add-french-translation` at `master`
-- [ ] 1.2 `git fetch github pull/14/head`, then in the worktree `git merge --ff-only 704f55e5958717899fea2265f1a3c627dd4cde9d`; verify `git log -1 --format='%H %an'` shows `704f55e…` by aurel and `git diff master --stat` lists only `translations/fr.json` and `tests/test_translations.py`
-- [ ] 1.3 Verify the contribution against the spec: `fr.json` key set equals `strings.json`, and every string uses the same `{placeholder}` names as `strings.json`; then `../../.venv-test/bin/pytest tests/` from the worktree passes, including `test_translations.py`
+- [x] 1.1 `scripts/agent-worktree.sh create add-french-translation`; verify `.worktree/add-french-translation/.agent-lock` exists and `git worktree list` shows branch `agent/add-french-translation` at `master`
+- [x] 1.2 `git fetch github pull/14/head`, then put the worktree branch on `704f55e5958717899fea2265f1a3c627dd4cde9d`; verify `git log -1 --format='%H %an'` shows `704f55e…` by aurel and `git diff 851ec3a --stat` lists only `translations/fr.json` and `tests/test_translations.py`
+  - `master` had moved on by the proposal commit (`2050051`, `openspec/` only), so `--ff-only` was impossible. The fresh branch had no commits of its own, so it was reset to `704f55e` (parent `851ec3a`) instead; the commit is unchanged. Diff vs `851ec3a`: the two files, 109 insertions
+- [x] 1.3 Verify the contribution against the spec: `fr.json` key set equals `strings.json`, and every string uses the same `{placeholder}` names as `strings.json`; then `../../.venv-test/bin/pytest tests/` from the worktree passes, including `test_translations.py`
+  - 34 keys match, no placeholder mismatches; 77 passed, 587 subtests passed
 
 ## 2. Version
 
-- [ ] 2.1 Bump `custom_components/perfectdraft/manifest.json` to 0.4.6 and commit as the maintainer; verify `git diff HEAD~1` is the single version line and the full suite still passes. Record the commit hash here
+- [x] 2.1 Bump `custom_components/perfectdraft/manifest.json` to 0.4.6 and commit as the maintainer; verify `git diff HEAD~1` is the single version line and the full suite still passes. Record the commit hash here
+  - Commit `9a81654` on `agent/add-french-translation`, on top of `704f55e`; one-line diff; 77 passed, 587 subtests passed
 
 ## 3. Project hygiene
 
-- [ ] 3.1 Add a line to `PROJECT_HYGIENE.md` section 11 (main checkout): every new, renamed or removed key in `strings.json` must be mirrored in `translations/en.json` and `translations/fr.json` in the same commit, with a French string written rather than an English placeholder or a relaxed test; `tests/test_translations.py` enforces it. Commit in the main checkout; verify with `git log -1 -- PROJECT_HYGIENE.md`
+- [x] 3.1 Add a line to `PROJECT_HYGIENE.md` section 11 (main checkout): every new, renamed or removed key in `strings.json` must be mirrored in `translations/en.json` and `translations/fr.json` in the same commit, with a French string written rather than an English placeholder or a relaxed test; `tests/test_translations.py` enforces it. Commit in the main checkout; verify with `git log -1 -- PROJECT_HYGIENE.md`
 
 ## Workflow follow-up
 
