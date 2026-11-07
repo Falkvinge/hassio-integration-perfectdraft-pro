@@ -48,19 +48,14 @@ The integration needs a one-time verification token from PerfectDraft's website.
 3. Paste this command at the console prompt and press **Enter** — once, not as a "Live expression", which re-runs it over and over:
 
 ```javascript
-grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => { window.pdToken = t; console.log('Token ready. Now run: copy(pdToken)') })
+grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => { console.log(t); prompt('PerfectDraft verification token. Press Ctrl+C (Cmd+C on a Mac) to copy it, then OK.', t) })
 ```
 
-4. When **Token ready** appears, run this second command to copy the token to your clipboard:
-
-```javascript
-copy(pdToken)
-```
-
+4. A dialog opens with the token already selected — press **Ctrl+C** (**Cmd+C** on a Mac), then **OK**
 5. Paste the token into the Home Assistant setup dialog
 6. Click **Submit** within 2 minutes (the token expires)
 
-If your browser reports that `copy` is not defined, run `pdToken` instead, then select and copy the long string it prints.
+If no dialog appears, the same token is printed in the console: right-click it and choose **Copy** (or select it and copy).
 
 That's it! The integration will authenticate and start polling your PerfectDraft Pro. Token refresh is automatic — you should not need to repeat this step. If the session does eventually expire, Home Assistant will prompt you to re-authenticate. (This is a new integration, so the exact session lifespan is still being determined — it's at least 30 days and may well be indefinite.)
 
