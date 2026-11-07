@@ -55,6 +55,19 @@
     },
     "button": {
       "mark_keg_changed": { "name": "Marquer le fût changé" }
+    },
+    "number": {
+      "target_temperature": { "name": "Température cible" }
+    },
+    "select": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "standard": "Standard",
+          "eco": "Éco"
+        }
+      },
+      "active_keg": { "name": "Fût installé" }
     }
   },
   "options": {
