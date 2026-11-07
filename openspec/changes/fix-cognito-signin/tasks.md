@@ -23,9 +23,9 @@
 ## 5. On-device verification and version
 
 - [x] 5.1 Bump `manifest.json` to 0.3.5 (shared with `add-keg-48180`, which must not bump it again)
-- [ ] 5.2 Install the branch build on Home Assistant and add the integration from scratch with a fresh README token; confirm the entry is created and sensors populate
-- [ ] 5.3 With a deliberately wrong password, confirm the flow returns to the credentials form showing `invalid_credentials` and Cognito's reason; with a stale (>2 min) token, confirm `token_rejected` on the token form
-- [ ] 5.4 Trigger a reauth on the existing entry and confirm it succeeds; if a keg is fitted, also confirm Keg Freshness keeps its countdown and clear that TODO in `PROJECT_HYGIENE.md`
+- [ ] 5.2 (DEFERRED 2026-11-07 by maintainer; no time for a reinstall) Install the branch build on Home Assistant and add the integration from scratch with a fresh README token; confirm the entry is created and sensors populate
+- [ ] 5.3 (DEFERRED with 5.2) With a deliberately wrong password, confirm the flow returns to the credentials form showing `invalid_credentials` and Cognito's reason; with a stale (>2 min) token, confirm `token_rejected` on the token form
+- [ ] 5.4 (DEFERRED with 5.2) Trigger a reauth on the existing entry and confirm it succeeds; if a keg is fitted, also confirm Keg Freshness keeps its countdown and clear that TODO in `PROJECT_HYGIENE.md`
 - [x] 5.5 Run the full suite (`.venv-test/bin/pytest tests/` and `python3 -m unittest discover -s tests`) and confirm green
 
 ## Workflow follow-up
