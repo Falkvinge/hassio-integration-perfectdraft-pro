@@ -58,8 +58,8 @@ Home Assistant fills error placeholders from `description_placeholders`. Every `
 
 - **PerfectDraft changes the Lambda again.** The reason now reaches the UI, so the next break is diagnosable from a user's screenshot. Nothing else changes.
 - **PerfectDraft disables `USER_PASSWORD_AUTH` on the app client.** Cognito would return `InvalidParameterException`, which surfaces as `invalid_auth` with the reason. There is no mitigation beyond reacting. The shop itself appears to rely on this flow.
-- **We cannot test against the real service before release.** The stored refresh token on the dev host has expired. Mitigation: a manual sign-in through Home Assistant with the built branch before tagging (task group 5). It doubles as the reauth check owed in `PROJECT_HYGIENE.md` if a keg is fitted.
-- **`copy()` is unavailable in some browser.** The README keeps a fallback line with the old `console.log(t)` form.
+- **We cannot test against the real service before release.** The stored refresh token on the dev host has expired. The planned mitigation, a manual sign-in through Home Assistant before tagging (tasks 5.2–5.4), was waived by the maintainer on 2026-11-07: v0.3.5 ships with only the automated suite and the browser-verified README token. If live sign-in fails, the `{reason}` placeholder puts the error in front of the reporting user, and the checks are owed as a post-release TODO in `PROJECT_HYGIENE.md`.
+- **The clipboard write fails in some browser.** The black box then shows "Copy failed: …", and the README tells the user to copy the token from the console, where the command also prints it.
 
 ## Migration Plan
 
