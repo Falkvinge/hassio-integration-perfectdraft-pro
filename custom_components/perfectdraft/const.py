@@ -5,6 +5,8 @@ API_KEY = "cAyzERqthCJXYVExjNAhr9CzE8ncLN2cQK3WGK10"
 
 RECAPTCHA_SITE_KEY = "6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV"
 RECAPTCHA_ACTION = "Magento/login"
+# PerfectDraft's Cognito PreAuthentication Lambda rejects sign-in without it.
+RECAPTCHA_DOMAIN = "https://www.perfectdraft.com"
 
 COGNITO_REGION = "eu-west-1"
 COGNITO_CLIENT_ID = "57ddq2ppqg2jcpup06r2g1deur"

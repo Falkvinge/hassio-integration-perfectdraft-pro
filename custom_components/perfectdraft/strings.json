@@ -26,7 +26,9 @@
       }
     },
     "error": {
-      "invalid_auth": "Authentication failed. Token may have expired (2 min limit) or credentials are wrong. Try again with a fresh token.",
+      "invalid_auth": "Authentication failed: {reason}. Try again with a fresh token.",
+      "invalid_credentials": "PerfectDraft rejected the email or password: {reason}.",
+      "token_rejected": "PerfectDraft rejected the verification token: {reason}. Generate a fresh token and paste it within 2 minutes.",
       "cannot_connect": "Cannot connect to PerfectDraft service.",
       "unknown": "An unexpected error occurred."
     },
