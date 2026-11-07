@@ -48,10 +48,10 @@ The integration needs a one-time verification token from PerfectDraft's website.
 3. Paste this command at the console prompt and press **Enter** — once, not as a "Live expression", which re-runs it over and over:
 
 ```javascript
-grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => { console.log(t); const b = document.body.appendChild(document.createElement('button')); b.textContent = 'Click to copy your PerfectDraft token'; b.style = 'position:fixed;top:40%;left:50%;transform:translateX(-50%);z-index:2147483647;padding:20px 40px;font-size:22px;background:#000;color:#fff;border-radius:8px;cursor:pointer'; b.onclick = () => navigator.clipboard.writeText(t).then(() => b.textContent = 'Copied! Paste it into Home Assistant', e => b.textContent = 'Copy failed: ' + e.message) })
+grecaptcha.enterprise.execute('6LcZQiUoAAAAAAO3JUjLiT470c-pNXbWyepuvMtV', {action: 'Magento/login'}).then(t => { console.log(t); const b = document.body.appendChild(document.createElement('button')); b.textContent = 'Click THIS BLACK BOX to copy your PerfectDraft token'; b.style = 'position:fixed;top:40%;left:50%;transform:translateX(-50%);z-index:2147483647;padding:20px 40px;font-size:22px;background:#000;color:#fff;border-radius:8px;cursor:pointer'; b.onclick = () => navigator.clipboard.writeText(t).then(() => b.textContent = 'Copied! Paste it into Home Assistant', e => b.textContent = 'Copy failed: ' + e.message) })
 ```
 
-4. A black **Click to copy your PerfectDraft token** button appears in the middle of the page — click it, and it changes to **Copied!**
+4. A black box saying **Click THIS BLACK BOX to copy your PerfectDraft token** appears in the middle of the page — click it, and it changes to **Copied!**
 5. Paste the token into the Home Assistant setup dialog
 6. Click **Submit** within 2 minutes (the token expires)
 
