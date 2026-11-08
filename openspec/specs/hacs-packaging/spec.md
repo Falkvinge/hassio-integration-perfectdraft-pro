@@ -1,3 +1,7 @@
+## Purpose
+
+The repository layout, metadata, branding, documentation and UI strings that let the integration be installed and updated through HACS and presented properly in Home Assistant, in English and French.
+
 ## Requirements
 
 ### Requirement: HACS-compliant repository structure

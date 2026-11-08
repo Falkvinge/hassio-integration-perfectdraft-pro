@@ -1,3 +1,7 @@
+## Purpose
+
+Polls the PerfectDraft API once per interval for each configured account and shares the result with every entity, so request volume stays low enough to avoid the API's rate limiting. It also turns API failures into Home Assistant's reauth and unavailable states.
+
 ## Requirements
 
 ### Requirement: Single DataUpdateCoordinator per config entry

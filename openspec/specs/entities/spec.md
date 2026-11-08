@@ -1,3 +1,7 @@
+## Purpose
+
+The Home Assistant device and entities that represent a PerfectDraft machine on dashboards and in automations: beer temperature, keg level, the fitted keg and its beer name, machine status, pour data, and a client-side keg freshness countdown with a manual keg-change button.
+
 ## Requirements
 
 ### Requirement: HA Device per PerfectDraft machine

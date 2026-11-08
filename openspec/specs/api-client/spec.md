@@ -1,3 +1,7 @@
+## Purpose
+
+The async client for PerfectDraft's cloud services and the integration's only point of contact with them. It signs in through AWS Cognito with the account's email, password and a reCAPTCHA verification token, refreshes the session without user involvement, and fetches the account's machines and their telemetry from `api.perfectdraft.com`.
+
 ## Requirements
 
 ### Requirement: Async HTTP client

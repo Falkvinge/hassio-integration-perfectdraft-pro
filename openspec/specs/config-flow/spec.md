@@ -1,3 +1,7 @@
+## Purpose
+
+The Home Assistant UI flows that connect a PerfectDraft account: initial setup with email, password and a browser-generated verification token; reauthentication when the session can no longer be refreshed; and an options form for the polling interval. Failures tell the user which input was rejected and why.
+
 ## Requirements
 
 ### Requirement: User step collects email and password
