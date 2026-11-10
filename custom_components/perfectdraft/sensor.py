@@ -15,7 +15,13 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfPressure,
+    UnitOfTemperature,
+    UnitOfTime,
+    UnitOfVolume,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -60,11 +66,21 @@ def _get_temperature(data: dict) -> float | None:
     return beer_temperature(_get_details(data))
 
 
+def _get_target_temperature(data: dict) -> float | None:
+    val = (data.get("setting") or {}).get("temperature")
+    return float(val) if val is not None else None
+
+
 def _get_volume_remaining(data: dict) -> float | None:
     vol = _get_details(data).get("kegVolume")
     if vol is None:
         return None
     return round(float(vol) / KEG_TOTAL_VOLUME * 100, 1)
+
+
+def _get_keg_volume(data: dict) -> float | None:
+    vol = _get_details(data).get("kegVolume")
+    return round(float(vol), 2) if vol is not None else None
 
 
 def _get_connection_state(data: dict) -> str | None:
@@ -93,8 +109,25 @@ def _get_last_pour_volume(data: dict) -> float | None:
     return round(float(val) * 1000)  # litres -> ml
 
 
+def _get_last_pour_duration(data: dict) -> float | None:
+    val = _get_details(data).get("durationOfLastPour")
+    if val is None or val == 0:
+        return None
+    return round(float(val) / 1000, 1)  # ms -> s
+
+
+def _get_keg_pressure(data: dict) -> float | None:
+    val = _get_details(data).get("kegPressure")
+    return float(val) if val is not None else None
+
+
 def _get_firmware(data: dict) -> str | None:
     return _get_details(data).get("firmwareVersion")
+
+
+def _get_error_code(data: dict) -> int | None:
+    val = _get_details(data).get("errorCodes")
+    return int(val) if val is not None else None
 
 
 def _get_mode(data: dict) -> str | None:
@@ -140,6 +173,16 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         value_fn=_get_temperature,
     ),
     PerfectDraftSensorDescription(
+        key="target_temperature",
+        translation_key="target_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:thermostat",
+        suggested_display_precision=0,
+        value_fn=_get_target_temperature,
+    ),
+    PerfectDraftSensorDescription(
         key="keg_remaining",
         translation_key="keg_remaining",
         native_unit_of_measurement=PERCENTAGE,
@@ -147,6 +190,16 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         icon="mdi:keg",
         suggested_display_precision=0,
         value_fn=_get_volume_remaining,
+    ),
+    PerfectDraftSensorDescription(
+        key="keg_volume",
+        translation_key="keg_volume",
+        device_class=SensorDeviceClass.VOLUME_STORAGE,
+        native_unit_of_measurement=UnitOfVolume.LITERS,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:keg",
+        suggested_display_precision=2,
+        value_fn=_get_keg_volume,
     ),
     PerfectDraftSensorDescription(
         key="keg_product_id",
@@ -187,6 +240,25 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         value_fn=_get_last_pour_volume,
     ),
     PerfectDraftSensorDescription(
+        key="last_pour_duration",
+        translation_key="last_pour_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        icon="mdi:timer-outline",
+        suggested_display_precision=1,
+        value_fn=_get_last_pour_duration,
+    ),
+    PerfectDraftSensorDescription(
+        key="keg_pressure",
+        translation_key="keg_pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        native_unit_of_measurement=UnitOfPressure.KPA,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:gauge",
+        suggested_display_precision=1,
+        value_fn=_get_keg_pressure,
+    ),
+    PerfectDraftSensorDescription(
         key="firmware",
         translation_key="firmware",
         icon="mdi:chip",
@@ -198,6 +270,12 @@ SENSOR_DESCRIPTIONS: tuple[PerfectDraftSensorDescription, ...] = (
         translation_key="mode",
         icon="mdi:thermostat",
         value_fn=_get_mode,
+    ),
+    PerfectDraftSensorDescription(
+        key="error_code",
+        translation_key="error_code",
+        icon="mdi:alert-circle-outline",
+        value_fn=_get_error_code,
     ),
 )
 

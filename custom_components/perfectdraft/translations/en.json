@@ -42,16 +42,21 @@
   "entity": {
     "sensor": {
       "temperature": { "name": "Temperature" },
+      "target_temperature": { "name": "Target Temperature" },
       "keg_remaining": { "name": "Keg Remaining" },
+      "keg_volume": { "name": "Keg Remaining Volume" },
       "keg_product_id": { "name": "Keg Product" },
       "keg_name": { "name": "Keg" },
       "connection": { "name": "Connection" },
       "door": { "name": "Door" },
       "pours": { "name": "Pours" },
       "last_pour": { "name": "Last Pour" },
+      "last_pour_duration": { "name": "Last Pour Duration" },
+      "keg_pressure": { "name": "Keg Pressure" },
       "firmware": { "name": "Firmware" },
       "mode": { "name": "Mode" },
-      "keg_freshness": { "name": "Keg Freshness" }
+      "keg_freshness": { "name": "Keg Freshness" },
+      "error_code": { "name": "Error Code" }
     },
     "button": {
       "mark_keg_changed": { "name": "Mark Keg Changed" }
