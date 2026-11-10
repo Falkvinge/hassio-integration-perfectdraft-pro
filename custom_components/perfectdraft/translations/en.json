@@ -55,6 +55,19 @@
     },
     "button": {
       "mark_keg_changed": { "name": "Mark Keg Changed" }
+    },
+    "number": {
+      "target_temperature": { "name": "Target Temperature" }
+    },
+    "select": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "standard": "Standard",
+          "eco": "Eco"
+        }
+      },
+      "active_keg": { "name": "Active Keg" }
     }
   },
   "options": {

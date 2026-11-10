@@ -18,6 +18,14 @@ A Home Assistant custom integration for the [PerfectDraft Pro](https://www.perfe
 | Mode | Current operating mode (standard, eco, etc.) | — |
 | Firmware | Machine firmware version (disabled by default) | — |
 
+## Controls
+
+| Control | Description | Values |
+|---------|-------------|--------|
+| Target Temperature | Set desired beer temperature | 0°C – 12°C |
+| Mode | Switch operating mode | standard, eco |
+| Active Keg | Select currently installed keg | Catalog choices |
+
 ## Installation
 
 ### Via HACS (recommended)

@@ -21,7 +21,9 @@ CONF_USER_ID = "user_id"
 CONF_MACHINE_ID = "machine_id"
 CONF_SCAN_INTERVAL = "scan_interval"
 
-PLATFORMS = ["sensor", "button"]
+SELECTABLE_MODE_OPTIONS = ("standard", "eco")
+
+PLATFORMS = ["sensor", "button", "number", "select"]
 
 
 def keg_changed_signal(machine_id: str) -> str:
